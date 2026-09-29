@@ -11,9 +11,11 @@
 #include <thread>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <mutex>
 #include <sys/socket.h>
 #include <fstream>
 #include <cctype>
+#include <thread>
 #include <iostream>
 #include <vector>
 #include "data.hh"
@@ -30,6 +32,9 @@ namespace resp {
 namespace parser {
     std::optional<std::vector<std::string>> parse_command(std::string& buffer);
 }
+
+void handle_client(int client_fd, Storage<std::string>& store);
+
 
 std::string execute(const std::vector<std::string>& cmd, Storage<std::string>& store);
 

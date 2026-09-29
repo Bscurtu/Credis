@@ -123,11 +123,11 @@ OK
 
 ## 🗺️ Roadmap
 
-- [x] **Phase 1 — Storage:** `set`, `get`, `del`, `expire`, with unit tests
-- [x] **Phase 2 — RESP protocol:** serializers and parser with partial-message handling
-- [x] **Phase 3 — Single-client server:** `PING`, `ECHO`, `SET`, `GET`, `DEL` working with `redis-cli`
-- [ ] **Phase 4 — Concurrency:** thread per client ✅, `std::mutex` protecting the storage, then an `epoll` event loop
-- [ ] **Phase 5 — Expiration commands:** `EXPIRE`, `TTL`
+- [X] **Phase 1 — Storage:** `set`, `get`, `del`, `expire`, with unit tests
+- [X] **Phase 2 — RESP protocol:** serializers and parser with partial-message handling
+- [X] **Phase 3 — Single-client server:** `PING`, `ECHO`, `SET`, `GET`, `DEL` working with `redis-cli`
+- [X] **Phase 4 — Concurrency:** thread per client ✅, `std::mutex` protecting the storage, then an `epoll` event loop
+- [X] **Phase 5 — Expiration commands:** `EXPIRE`, `TTL`
 - [ ] **Phase 6 — Persistence:** append-only file (AOF), replayed on startup
 - [ ] **Phase 7 — Tooling:** Makefile/CMake, GitHub Actions CI with sanitizers, benchmarks with `redis-benchmark`
 
