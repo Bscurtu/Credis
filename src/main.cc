@@ -60,13 +60,21 @@ int main()
     assert(resp::integer(1) == ":1\r\n");
     assert(resp::null_bulk() == "$-1\r\n");
     
-    auto cmd = parser::parse_command("*3\r\n$3\r\nSET\r\n$1\r\na\r\n$4\r\nhola\r\n");
-    assert((cmd == std::vector<std::string>{"SET", "a", "hola"}));
+    std::string buf1 = "*3\r\n$3\r\nSET\r\n$1\r\na\r\n$3\r\nHii\r\n";
+    auto cmd = parser::parse_command(buf1);
+    assert(cmd.has_value());
+    assert((*cmd == std::vector<std::string>{"SET", "a", "Hii"}));
+    assert(buf1.empty());
 
-    auto ping = parser::parse_command("*1\r\n$4\r\nPING\r\n");
-    assert((ping == std::vector<std::string>{"PING"}));
+    std::string buf2 = "*1\r\n$4\r\nPING\r\n";
+    auto ping = parser::parse_command(buf2);
+    assert(ping.has_value());
+    assert((*ping == std::vector<std::string>{"PING"}));
 
-    auto espacios = parser::parse_command("*2\r\n$4\r\nECHO\r\n$10\r\nhola mundo\r\n");
-    assert((espacios == std::vector<std::string>{"ECHO", "hola mundo"}));
+    std::string buf3 = "*2\r\n$4\r\nECHO\r\n$11\r\nhello world\r\n";
+    auto spaces = parser::parse_command(buf3);
+    assert(spaces.has_value());
+    assert((*spaces == std::vector<std::string>{"ECHO", "hello world"}));
+    std::cout << "Every parse test has succeded\n";
     return 0;
 }

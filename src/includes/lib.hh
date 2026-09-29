@@ -26,5 +26,5 @@ namespace resp {
 }
 
 namespace parser {
-    std::vector<std::string> parse_command(const std::string& received);
+    std::optional<std::vector<std::string>> parse_command(std::string& buffer);
 }

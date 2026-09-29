@@ -48,24 +48,34 @@ namespace parser {
         return n;
     }
 
-    std::vector<std::string> parse_command(const std::string& received)
+    std::optional<std::vector<std::string>> parse_command(std::string& buffer)
     {
         std::vector<std::string> parsed;
         size_t i = 0;
-
-        if (received[i] != '*')
-            return parsed;
+        if (i >= buffer.size())
+            return std::nullopt;
+        if (buffer[i] != '*')
+            return std::nullopt;
         i++;
-        int n = read_number(received, i);
+        if (buffer.find("\r\n", i) == std::string::npos)
+            return std::nullopt;
+        int n = read_number(buffer, i);
         for (int k = 0; k < n; k++)
         {
-            if (received[i] != '$')
-                return {};
+            if (i >= buffer.size())
+                return std::nullopt;
+            if (buffer[i] != '$')
+                return std::nullopt;
             i++;
-            int size = read_number(received, i);
-            parsed.push_back(received.substr(i, size));
+            if (buffer.find("\r\n", i) == std::string::npos)
+                return std::nullopt;
+            int size = read_number(buffer, i);
+            if (i + size + 2 > buffer.size())
+                return std::nullopt;
+            parsed.push_back(buffer.substr(i, size));
             i += size + 2;
         }
+        buffer.erase(0, i);
         return parsed;
     }
 };
