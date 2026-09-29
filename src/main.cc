@@ -56,8 +56,17 @@ int main()
     std::cout << "Every test about Storage has succeded\n";
 
     assert(resp::simple("OK") == "+OK\r\n");
-    assert(resp::bulk("Hello") == "$4\r\nHello\r\n");
+    assert(resp::bulk("Hello") == "$5\r\nHello\r\n");
     assert(resp::integer(1) == ":1\r\n");
     assert(resp::null_bulk() == "$-1\r\n");
+    
+    auto cmd = parser::parse_command("*3\r\n$3\r\nSET\r\n$1\r\na\r\n$4\r\nhola\r\n");
+    assert((cmd == std::vector<std::string>{"SET", "a", "hola"}));
+
+    auto ping = parser::parse_command("*1\r\n$4\r\nPING\r\n");
+    assert((ping == std::vector<std::string>{"PING"}));
+
+    auto espacios = parser::parse_command("*2\r\n$4\r\nECHO\r\n$10\r\nhola mundo\r\n");
+    assert((espacios == std::vector<std::string>{"ECHO", "hola mundo"}));
     return 0;
 }

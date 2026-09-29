@@ -9,9 +9,12 @@
 #include <cassert>
 #include <iostream>
 #include <thread>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <fstream>
+#include <iostream>
 #include <vector>
 #include "data.hh"
-#include "resp.hh"
 
 namespace resp {
     std::string simple(const std::string& s);
@@ -20,4 +23,8 @@ namespace resp {
     std::string bulk(const std::string& s);
     std::string null_bulk();
     std::optional<std::vector<std::string>> parse(std::string& buffer);
+}
+
+namespace parser {
+    std::vector<std::string> parse_command(const std::string& received);
 }
