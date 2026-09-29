@@ -73,13 +73,11 @@ void    tester()
     assert(spaces.has_value());
     assert((*spaces == std::vector<std::string>{"ECHO", "hello world"}));
     std::cout << "Every parse test has succeded\n";
+    std::cout << "Starting server..." << std::endl;
 }
 
-int main(int argc, char **argv)
+int main()
 {
-    if (argc == 1)
-        credis_run();
-    if (argc == 2 && strcmp(argv[1], "t") == 0)
-        tester();
-    return 0;
+    tester();
+    credis_run();
 }
