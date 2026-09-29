@@ -2,12 +2,9 @@
 #include "includes/lib.hh"
 
 using namespace std::chrono_literals;
-int main()
+
+void    tester()
 {
-
-    std::optional<std::vector<std::string>> parse(std::string& buffer);
-
-
 
     // Existing value
     {
@@ -76,5 +73,13 @@ int main()
     assert(spaces.has_value());
     assert((*spaces == std::vector<std::string>{"ECHO", "hello world"}));
     std::cout << "Every parse test has succeded\n";
+}
+
+int main(int argc, char **argv)
+{
+    if (argc == 1)
+        credis_run();
+    if (argc == 2 && strcmp(argv[1], "t") == 0)
+        tester();
     return 0;
 }

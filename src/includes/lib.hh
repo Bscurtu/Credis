@@ -10,8 +10,10 @@
 #include <iostream>
 #include <thread>
 #include <netinet/in.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <fstream>
+#include <cctype>
 #include <iostream>
 #include <vector>
 #include "data.hh"
@@ -28,3 +30,8 @@ namespace resp {
 namespace parser {
     std::optional<std::vector<std::string>> parse_command(std::string& buffer);
 }
+
+std::string execute(const std::vector<std::string>& cmd, Storage<std::string>& store);
+
+int net_init();
+void credis_run();
