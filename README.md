@@ -103,19 +103,19 @@ g++ -std=c++17 -Wall -Wextra -Wshadow -g -pthread \
 In another terminal, connect with the official Redis client:
 
 ```bash
-redis-cli -p 6380
+redis-cli -p 6379
 ```
 
 ```text
-127.0.0.1:6380> PING
+127.0.0.1:6379> PING
 PONG
-127.0.0.1:6380> SET name bs
+127.0.0.1:6379> SET name bs
 OK
-127.0.0.1:6380> GET name
+127.0.0.1:6379> GET name
 "bs"
-127.0.0.1:6380> DEL name
+127.0.0.1:6379> DEL name
 (integer) 1
-127.0.0.1:6380> GET name
+127.0.0.1:6379> GET name
 (nil)
 ```
 
