@@ -12,7 +12,6 @@ The goal is simple: a server that the real `redis-cli` can connect to and use fo
 
 This is an **educational project**, built as the next step after my [C++ learning path](https://github.com/Bscurtu/Learning-Cpp) and my [simplesHTTP](https://github.com/Bscurtu/Learning-Cpp/tree/main/simplesHtTP) server.
 
-- **Not production-ready:** it implements a small subset of Redis and is not meant to replace it.
 - **Learning goal:** understand protocol parsing, TCP stream handling, concurrency, key expiration and persistence by implementing them myself, without external libraries.
 
 ---
@@ -85,7 +84,7 @@ g++ -std=c++17 -Wall -Wextra -g main.cc response_serializer/resp.cc -o Credis_te
 ## 🗺️ Roadmap
 
 - [X] **Phase 1 — Storage:** `set`, `get`, `del`, `expire`, with unit tests
-- [ ] **Phase 2 — RESP protocol:** serializers ✅, parser with partial-message handling
+- [X] **Phase 2 — RESP protocol:** serializers ✅, parser with partial-message handling
 - [ ] **Phase 3 — Single-client server:** `PING`, `ECHO`, `SET`, `GET`, `DEL` working with `redis-cli`
 - [ ] **Phase 4 — Concurrency:** multiple clients (thread per client first, then `epoll`)
 - [ ] **Phase 5 — Expiration commands:** `EXPIRE`, `TTL`
