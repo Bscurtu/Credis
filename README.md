@@ -1,4 +1,4 @@
-# 🗄️ Credis
+# 🗄️ Credis V 0.8
 
 A Redis-compatible, in-memory key-value server written from scratch in modern C++ (C++17), using only the standard library and Linux POSIX sockets.
 
@@ -38,10 +38,14 @@ Storage, RESP and the Executor are tested on their own, without any networking i
 
 ## ✨ Features
 
+## Tester
+- Runs a basic test for the main storage before starting the server.
+
 ### Storage
 - `std::unordered_map` for O(1) average lookups.
 - Per-key expiration using `std::chrono::steady_clock` (not affected by system clock changes).
 - **Lazy expiration:** expired keys are removed the next time they are accessed.
+- **Active expiration:** expired keys are removed every 30 seconds.
 - Redis semantics: a new `SET` clears any previous expiration on that key.
 
 ### RESP protocol
@@ -50,7 +54,7 @@ Storage, RESP and the Executor are tested on their own, without any networking i
 - Designed for TCP streams: partial messages stay in the buffer until the rest arrives, and several pipelined commands can be parsed from one read.
 
 ### Executor
-- Supported commands: `PING`, `ECHO`, `SET`, `GET`, `DEL`.
+- Supported commands: `PING`, `ECHO`, `SET`, `GET`, `DEL`, 'PEXPIRE', 'PEXPIREAT'.
 - Case-insensitive command names (`set`, `SET` and `Set` are the same).
 - Argument count validation, with the same error messages as Redis.
 
@@ -65,20 +69,30 @@ Storage, RESP and the Executor are tested on their own, without any networking i
 ## 📁 Project Structure
 
 ```text
+## 📁 Project Structure
+
+```text
 Credis/
 ├── README.md
+├── docs/
+│   └── benchmark.md             # Benchmark methodology and results
 └── src/
-    ├── main.cc                     # Entry point: runs the tests, then starts the server
+    ├── main.cc                  # Entry point: starts the server
     ├── includes/
-    │   ├── lib.hh                  # Shared includes and declarations
-    │   └── data.hh                 # Storage class (key-value store with expiration)
-    ├── response_serializer/
-    │   └── resp.cc                 # RESP serializers and parser
+    │   ├── lib.hh               # Shared includes and declarations
+    │   ├── data.hh              # Storage: key-value store with expiration (thread-safe)
+    │   └── aof.hh               # AOF class declaration
+    ├── response_seralizer/
+    │   └── resp.cc              # RESP serializers and stream-safe parser
     ├── executor/
-    │   └── executor.cc             # Command dispatch (PING, ECHO, SET, GET, DEL)
-    └── net_connection/
-        ├── credis_init.cc          # Socket creation and binding
-        └── credis_run.cc           # Accept loop and per-client handling
+    │   └── executor.cc          # Command dispatch
+    ├── net_connection/
+    │   ├── credis_init.cc       # Socket creation and binding
+    │   └── credis_run.cc        # Accept loop, per-client threads, cleaner thread
+    ├── persistence/
+    │   └── aof.cc               # Append-only file: write commands and replay on startup
+    └── tests/
+        └── tester.cc            # Unit tests (Storage, RESP, Executor)
 ```
 
 ---
@@ -90,12 +104,14 @@ Requires a C++17 compiler (such as `g++`) on Linux.
 ```bash
 cd src
 g++ -std=c++17 -Wall -Wextra -Wshadow -g -pthread \
-    main.cc \
-    response_serializer/resp.cc \
-    executor/executor.cc \
-    net_connection/credis_init.cc \
-    net_connection/credis_run.cc \
-    -o credis
+            main.cc \
+            response_seralizer/resp.cc \
+            executor/executor.cc \
+            net_connection/credis_init.cc \
+            net_connection/credis_run.cc \
+            persistence/aof.cc \
+            -o \
+            mini-redis
 
 ./credis
 ```
@@ -103,19 +119,19 @@ g++ -std=c++17 -Wall -Wextra -Wshadow -g -pthread \
 In another terminal, connect with the official Redis client:
 
 ```bash
-redis-cli -p 6379
+redis-cli -p 6380
 ```
 
 ```text
-127.0.0.1:6379> PING
+127.0.0.1:6380> PING
 PONG
-127.0.0.1:6379> SET name bs
+127.0.0.1:6380> SET city Madrid
 OK
-127.0.0.1:6379> GET name
-"bs"
-127.0.0.1:6379> DEL name
+127.0.0.1:6380> GET city
+"Madrid"
+127.0.0.1:6380> DEL city
 (integer) 1
-127.0.0.1:6379> GET name
+127.0.0.1:6380> GET city
 (nil)
 ```
 
@@ -126,10 +142,12 @@ OK
 - [X] **Phase 1 — Storage:** `set`, `get`, `del`, `expire`, with unit tests
 - [X] **Phase 2 — RESP protocol:** serializers and parser with partial-message handling
 - [X] **Phase 3 — Single-client server:** `PING`, `ECHO`, `SET`, `GET`, `DEL` working with `redis-cli`
-- [X] **Phase 4 — Concurrency:** thread per client ✅, `std::mutex` protecting the storage, then an `epoll` event loop
+- [X] **Phase 4 — Concurrency:** thread per client ✅, `std::mutex` protecting the storage.
 - [X] **Phase 5 — Expiration commands:** `EXPIRE`, `TTL`
-- [ ] **Phase 6 — Persistence:** append-only file (AOF), replayed on startup
-- [ ] **Phase 7 — Tooling:** Makefile/CMake, GitHub Actions CI with sanitizers, benchmarks with `redis-benchmark`
+- [X] **Phase 6 — Persistence:** append-only file (AOF), replayed on startup
+- [X] **Phase 7 — Benchmarks:** with `redis-benchmark` and testing
+- [ ] **Phase 8 — Network and process improve:** `epoll` event loop and testing bottle necks furthermore
+- [ ] **Phase 9 — Makefile and deployment:** Configuration of a makefile to compile the project
 
 ---
 
@@ -141,3 +159,15 @@ OK
 - Time handling in C++ with `std::chrono`, and `std::optional` for values that may not exist.
 - Why threads (shared memory) fit a database server and `fork()` (separate memory) does not.
 - (In progress) Race conditions and protecting shared state with `std::mutex`.
+
+## 📊 Benchmarks
+
+Measured with the official `redis-benchmark` tool, 200 parallel clients, 1,000,000 requests:
+
+| Version | SET (req/s) | GET (req/s) | p99 latency |
+|---|---|---|---|
+| Thread per client | ~75,500 | ~73,000 | ~2.0 ms |
+| Thread per client + AOF persistence | ~67,000 | ~67,700 | ~2.6 ms |
+
+Release build (`-O2`), WSL2 on Windows, I9-13900KH. Numbers vary ±10% between runs.
+Full methodology and raw results: [docs/benchmarks.md](docs/benchmarks.md).

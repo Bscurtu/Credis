@@ -18,6 +18,7 @@
 #include <thread>
 #include <iostream>
 #include <vector>
+#include "aof.hh"
 #include "data.hh"
 
 namespace resp {
@@ -27,16 +28,18 @@ namespace resp {
     std::string bulk(const std::string& s);
     std::string null_bulk();
     std::optional<std::vector<std::string>> parse(std::string& buffer);
+    std::string array(const std::vector<std::string>& items);
 }
 
 namespace parser {
     std::optional<std::vector<std::string>> parse_command(std::string& buffer);
 }
 
-void handle_client(int client_fd, Storage<std::string>& store);
-
+void handle_client(int client_fd, Storage<std::string>& store, Aof& aof);
 
 std::string execute(const std::vector<std::string>& cmd, Storage<std::string>& store);
+
+std::string array(const std::vector<std::string>& items);
 
 int net_init();
 void credis_run();

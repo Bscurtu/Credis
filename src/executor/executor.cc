@@ -74,5 +74,31 @@ std::string execute(const std::vector<std::string>& cmd, Storage<std::string>& s
         return resp::integer(ok ? 1 : 0);
     }
 
+    if (command == "PEXPIREAT")
+    {
+        if (size != 3)
+            return resp::error("ERR wrong number of arguments for 'pexpireat' command");
+        long long unix_ms;
+        try {
+            unix_ms = std::stoll(cmd[2]);
+        } catch (...) {
+            return resp::error("ERR value is not an integer or out of range");
+        }
+        return resp::integer(store.expire_at(cmd[1], unix_ms) ? 1 : 0);
+    }
+
+    if (command  == "PEXPIRE")
+    {
+        if (size != 3)
+            return resp::error("ERR wrong number of arguments for 'pexpire' command");
+        long long ms;
+        try {
+            ms = std::stoll(cmd[2]);
+        } catch (...) {
+            return resp::error("ERR value is not an integer or out of range");
+        }
+        return resp::integer(store.expire(cmd[1], std::chrono::milliseconds(ms)) ? 1 : 0);
+    }
+
     return resp::error("ERR unknown command '" + cmd[0] + "'");
 }

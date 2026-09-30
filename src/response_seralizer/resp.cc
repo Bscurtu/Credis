@@ -31,6 +31,15 @@ namespace resp {
     {
         return "$-1" + separator;
     }
+
+    std::string array(const std::vector<std::string>& items)
+    {
+        std::string out = "*" + std::to_string(items.size()) + separator;
+        for (const auto& item : items)
+            out += bulk(item);
+        return out;
+    }
+
     std::optional<std::vector<std::string>> parse(std::string& buffer);
 };
 
