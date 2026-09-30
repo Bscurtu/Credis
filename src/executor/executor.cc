@@ -46,13 +46,6 @@ std::string execute(const std::vector<std::string>& cmd, Storage<std::string>& s
         return resp::integer(store.del(cmd[1]) ? 1 : 0);
     }
 
-    if (command == "DEL")
-    {
-        if (size != 2)
-            return resp::error("ERR wrong number of arguments for 'del' command");
-        return resp::integer(store.del(cmd[1]) ? 1 : 0);
-    }
-
     if (command == "TTL")
     {
         if (size != 2)

@@ -1,6 +1,8 @@
 
 #include "../includes/lib.hh"
 
+using namespace std::chrono_literals;
+
 void    tester()
 {
 

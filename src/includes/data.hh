@@ -22,11 +22,13 @@ class Storage
     public:
         void set(const K& key, std::string value)
         {
+            std::lock_guard<std::mutex> lock(mtx);
             data.insert_or_assign(key, Entry{std::move(value), std::nullopt});
         }
 
         std::optional<std::string> get(const K& key)
         {
+            std::lock_guard<std::mutex> lock(mtx);
             auto it = data.find(key);
             if (it == data.end())
                 return std::nullopt;
@@ -39,37 +41,38 @@ class Storage
 
         bool del(const K& key)
         {
+            std::lock_guard<std::mutex> lock(mtx);
             return data.erase(key) > 0;
         }
 
-    bool expire(const K& key, std::chrono::milliseconds ttl)
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        auto it = data.find(key);
-        if (it == data.end() || is_expired(it->second))
-            return false;
-        it->second.expires_at = Clock::now() + ttl;
-        return true;
-    }
-
-    bool expire_at(const K& key, long long unix_ms)
-    {
-        std::lock_guard<std::mutex> lock(mtx);
-        auto it = data.find(key);
-        if (it == data.end() || is_expired(it->second))
-            return false;
-
-        auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
-        long long remaining_ms = unix_ms - now_ms;
-
-        if (remaining_ms <= 0) {
-            data.erase(it);
+        bool expire(const K& key, std::chrono::milliseconds ttl)
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            auto it = data.find(key);
+            if (it == data.end() || is_expired(it->second))
+                return false;
+            it->second.expires_at = Clock::now() + ttl;
             return true;
         }
-        it->second.expires_at = Clock::now() + std::chrono::milliseconds(remaining_ms);
-        return true;
-    }
+
+        bool expire_at(const K& key, long long unix_ms)
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            auto it = data.find(key);
+            if (it == data.end() || is_expired(it->second))
+                return false;
+
+            auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+            long long remaining_ms = unix_ms - now_ms;
+
+            if (remaining_ms <= 0) {
+                data.erase(it);
+                return true;
+            }
+            it->second.expires_at = Clock::now() + std::chrono::milliseconds(remaining_ms);
+            return true;
+        }
 
         long long ttl(const K& key)
         {

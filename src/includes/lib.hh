@@ -41,5 +41,6 @@ std::string execute(const std::vector<std::string>& cmd, Storage<std::string>& s
 
 std::string array(const std::vector<std::string>& items);
 
+void    tester();
 int net_init();
 void credis_run();
