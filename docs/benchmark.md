@@ -25,7 +25,7 @@ All runs: **200 parallel clients**, **1,000,000 requests** per command, 3-byte p
 | | |
 |---|---|
 | **OS** | Ubuntu on WSL2 (Windows) |
-| **CPU** | <!-- fill in: lscpu \| grep "Model name" --> |
+| **CPU** | I9-13900KH |
 | **Compiler** | g++ (C++17) |
 | **Client** | `redis-benchmark` (from `redis-tools`), same machine |
 
