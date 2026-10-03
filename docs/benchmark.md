@@ -12,7 +12,7 @@ Performance measurements of Credis across its versions, taken with the official 
 |---|---|---|---|---|---|
 | [v0.5 — Thread per client](#v1--thread-per-client) | 2026-09-29 | ~75,500 | ~73,000 | ~1.3 ms | ~2.0 ms |
 | [v0.8 — Thread per client + AOF](#v2--thread-per-client--aof-persistence) | 2026-09-30 | ~67,000 | ~67,700 | ~1.5 ms | ~2.5–2.8 ms |
-| v3 — `epoll` event loop | *planned* | — | — | — | — |
+| v2.0 — `epoll` event loop | *planned* | — | — | — | — |
 
 All runs: **200 parallel clients**, **1,000,000 requests** per command, 3-byte payload.
 
@@ -112,7 +112,7 @@ Summary:
 
 ---
 
-## v2 — Thread per client + AOF persistence
+## v0.8 — Thread per client + AOF persistence
 
 **Date:** 2026-09-30 · **Commit:** <!-- fill in: git rev-parse --short HEAD -->
 
@@ -212,7 +212,7 @@ Summary:
 
 `SET` writes to the append-only file and `GET` does not, yet both reached ~67,000 req/s. If disk persistence were the bottleneck, `SET` would be clearly slower. The limit is elsewhere: scheduling 200 threads, the `read`/`send` system calls per request, and WSL2 networking.
 
-The drop from v1 to v2 (~10%) also affects `GET`, which never touches the AOF. It falls within the normal run-to-run variation, so it cannot be attributed to persistence from single runs. A proper comparison needs several runs of the same release build with and without AOF.
+The drop from v0.5 to v0.8 (~10%) also affects `GET`, which never touches the AOF. It falls within the normal run-to-run variation, so it cannot be attributed to persistence from single runs. A proper comparison needs several runs of the same release build with and without AOF.
 
 ### Thread-per-client does not scale to thousands of clients
 
@@ -233,6 +233,4 @@ Even with both limits raised, 2,000 clients mean 2,000 threads, each with its ow
 
 ## 🗺️ Next
 
-- [ ] Re-measure v1 with the release build for a clean v1 vs v2 comparison
-- [ ] Measure v2 with and without AOF, three runs each
-- [ ] v3: `epoll` event loop, same benchmark, plus a 2,000-client run
+- [ ] v2.0: `epoll` event loop, same benchmark, plus a 2,000-client run
