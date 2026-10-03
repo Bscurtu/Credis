@@ -206,4 +206,4 @@ Measured with the official `redis-benchmark` tool, 200 parallel clients, 1,000,0
 | Thread per client + AOF persistence | ~67,000 | ~67,700 | ~2.6 ms |
 
 Release build (`-O2`), WSL2 on Windows, I9-13900KH. Numbers vary ±10% between runs.
-Full methodology and raw results: [docs/benchmarks.md](docs/benchmarks.md).
+Full methodology and raw results: [docs/benchmarks.md](docs/benchmark.md).
