@@ -35,10 +35,6 @@ void handle_client(int client_fd, Storage& store, Aof& aof)
     close(client_fd);
 }
 
-void starter()
-{
-}
-
 void credis_run()
 {
     Storage store;

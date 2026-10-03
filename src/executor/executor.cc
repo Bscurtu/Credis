@@ -94,3 +94,4 @@ std::string execute(const std::vector<std::string>& cmd, Storage& store)
     }
     return resp::error("ERR unknown command '" + cmd[0] + "'");
 }
+
