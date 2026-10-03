@@ -1,6 +1,5 @@
 #pragma once
 
-template <typename K>
 class Storage
 {
     private:
@@ -12,7 +11,7 @@ class Storage
             std::optional<Clock::time_point> expires_at;
         };
 
-        std::unordered_map<K, Entry> data;
+        std::unordered_map<std::string, Entry> data;
 
         static bool is_expired(const Entry& e)
         {
@@ -20,13 +19,13 @@ class Storage
         }
 
     public:
-        void set(const K& key, std::string value)
+        void set(const std::string &key, std::string value)
         {
             std::lock_guard<std::mutex> lock(mtx);
             data.insert_or_assign(key, Entry{std::move(value), std::nullopt});
         }
 
-        std::optional<std::string> get(const K& key)
+        std::optional<std::string> get(const std::string& key)
         {
             std::lock_guard<std::mutex> lock(mtx);
             auto it = data.find(key);
@@ -39,13 +38,13 @@ class Storage
             return it->second.value;
         }
 
-        bool del(const K& key)
+        bool del(const std::string& key)
         {
             std::lock_guard<std::mutex> lock(mtx);
             return data.erase(key) > 0;
         }
 
-        bool expire(const K& key, std::chrono::milliseconds ttl)
+        bool expire(const std::string& key, std::chrono::milliseconds ttl)
         {
             std::lock_guard<std::mutex> lock(mtx);
             auto it = data.find(key);
@@ -55,7 +54,7 @@ class Storage
             return true;
         }
 
-        bool expire_at(const K& key, long long unix_ms)
+        bool expire_at(const std::string& key, long long unix_ms)
         {
             std::lock_guard<std::mutex> lock(mtx);
             auto it = data.find(key);
@@ -74,7 +73,7 @@ class Storage
             return true;
         }
 
-        long long ttl(const K& key)
+        long long ttl(const std::string& key)
         {
             std::lock_guard<std::mutex> lock(mtx);
 

@@ -1,7 +1,7 @@
 
 #include "../includes/lib.hh"
 
-void run_cleaner(Storage<std::string>& store)
+void run_cleaner(Storage& store)
 {
     while (true)
     {
@@ -12,7 +12,7 @@ void run_cleaner(Storage<std::string>& store)
     }
 }
 
-void handle_client(int client_fd, Storage<std::string>& store, Aof& aof)
+void handle_client(int client_fd, Storage& store, Aof& aof)
 {
     std::string pending;
     char buf[1024];
@@ -35,19 +35,24 @@ void handle_client(int client_fd, Storage<std::string>& store, Aof& aof)
     close(client_fd);
 }
 
+void starter()
+{
+}
+
 void credis_run()
 {
-    Storage<std::string> store;
+    Storage store;
     Aof aof("appendonly.aof");
     if (!aof.is_open()) {
         std::cerr << "Error: could not open appendonly.aof\n";
-        return;
+        return ;
     }
 
     size_t loaded = aof.load(store);
     std::cout << "[aof] loaded " << loaded << " commands\n";
 
     int server_fd = net_init();
+
     if (server_fd < 0)
         return;
     if (listen(server_fd, 16) < 0) {
@@ -57,7 +62,6 @@ void credis_run()
 
     std::thread cleaner(run_cleaner, std::ref(store));
     cleaner.detach();
-
     while (true)
     {
         int client_fd = accept(server_fd, nullptr, nullptr);

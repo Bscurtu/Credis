@@ -8,25 +8,25 @@ void    tester()
 
     // Existing value
     {
-        Storage<std::string> s;
+        Storage s;
         s.set("a", "1");
         assert(s.get("a") == "1");
     }
     // The value of the key
     {
-        Storage<std::string> s;
+        Storage s;
         assert(!s.get("nothing").has_value());
     }
     // Overwrite the data
     {
-        Storage<std::string> s;
+        Storage s;
         s.set("a", "1");
         s.set("a", "2");
         assert(s.get("a") == "2");
     }
     // Remove the data
     {
-        Storage<std::string> s;
+        Storage s;
         s.set("a", "1");
         assert(s.del("a") == true);
         assert(!s.get("a").has_value());
@@ -34,7 +34,7 @@ void    tester()
     }
     // Check if the data has expired
     {
-        Storage<std::string> s;
+        Storage s;
         s.set("a", "1");
         s.expire("a", 1s);
         std::this_thread::sleep_for(1100ms);
@@ -42,7 +42,7 @@ void    tester()
     }
     // Set removes the expire time that has been set
     {
-        Storage<std::string> s;
+        Storage s;
         s.set("a", "1");
         s.expire("a", 1s);
         s.set("a", "2");

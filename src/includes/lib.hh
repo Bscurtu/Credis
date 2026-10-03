@@ -9,6 +9,7 @@
 #include <cassert>
 #include <iostream>
 #include <thread>
+#include <getopt.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <mutex>
@@ -20,6 +21,7 @@
 #include <vector>
 #include "aof.hh"
 #include "data.hh"
+
 
 namespace resp {
     std::string simple(const std::string& s);
@@ -35,9 +37,9 @@ namespace parser {
     std::optional<std::vector<std::string>> parse_command(std::string& buffer);
 }
 
-void handle_client(int client_fd, Storage<std::string>& store, Aof& aof);
+void handle_client(int client_fd, Storage& store, Aof& aof);
 
-std::string execute(const std::vector<std::string>& cmd, Storage<std::string>& store);
+std::string execute(const std::vector<std::string>& cmd, Storage& store);
 
 std::string array(const std::vector<std::string>& items);
 

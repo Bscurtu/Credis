@@ -1,7 +1,7 @@
 
 #include "../includes/lib.hh"
 
-std::string execute(const std::vector<std::string>& cmd, Storage<std::string>& store)
+std::string execute(const std::vector<std::string>& cmd, Storage& store)
 {
     if (cmd.empty())
         return resp::error("ERR empty command");
@@ -92,6 +92,5 @@ std::string execute(const std::vector<std::string>& cmd, Storage<std::string>& s
         }
         return resp::integer(store.expire(cmd[1], std::chrono::milliseconds(ms)) ? 1 : 0);
     }
-
     return resp::error("ERR unknown command '" + cmd[0] + "'");
 }

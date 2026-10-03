@@ -23,7 +23,7 @@ bool Aof::is_write_command(const std::vector<std::string>& cmd)
         return false;
 }
 
-size_t Aof::load(Storage<std::string>& store)
+size_t Aof::load(Storage& store)
 {
     std::ifstream in(path, std::ios::binary);
     if (!in)

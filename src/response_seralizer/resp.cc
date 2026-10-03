@@ -57,34 +57,37 @@ namespace parser {
         return n;
     }
 
+    static std::optional<int> read_header(const std::string& buffer, size_t& i, char prefix)
+    {
+        if (i >= buffer.size() || buffer[i] != prefix)
+            return std::nullopt;
+        if (buffer.find("\r\n", i) == std::string::npos)
+            return std::nullopt;
+        i++;
+        return read_number(buffer, i);
+    }
+
     std::optional<std::vector<std::string>> parse_command(std::string& buffer)
     {
         std::vector<std::string> parsed;
         size_t i = 0;
-        if (i >= buffer.size())
+
+        auto n = read_header(buffer, i, '*');
+        if (!n)
             return std::nullopt;
-        if (buffer[i] != '*')
-            return std::nullopt;
-        i++;
-        if (buffer.find("\r\n", i) == std::string::npos)
-            return std::nullopt;
-        int n = read_number(buffer, i);
-        for (int k = 0; k < n; k++)
+
+        for (int k = 0; k < *n; k++)
         {
-            if (i >= buffer.size())
+            auto size = read_header(buffer, i, '$');
+            if (!size)
                 return std::nullopt;
-            if (buffer[i] != '$')
+            if (i + *size + 2 > buffer.size())
                 return std::nullopt;
-            i++;
-            if (buffer.find("\r\n", i) == std::string::npos)
-                return std::nullopt;
-            int size = read_number(buffer, i);
-            if (i + size + 2 > buffer.size())
-                return std::nullopt;
-            parsed.push_back(buffer.substr(i, size));
-            i += size + 2;
+            parsed.push_back(buffer.substr(i, *size));
+            i += *size + 2;
         }
+
         buffer.erase(0, i);
         return parsed;
     }
-};
+}

@@ -1,4 +1,4 @@
-# 🗄️ Credis V 0.8
+# 🗄️ Credis V 1.0
 
 A Redis-compatible, in-memory key-value server written from scratch in modern C++ (C++17), using only the standard library and Linux POSIX sockets.
 
@@ -99,40 +99,76 @@ Credis/
 
 ## 🚀 Build and Run
 
-Requires a C++17 compiler (such as `g++`) on Linux.
+### Requirements
+
+- Linux (or WSL2 on Windows)
+- A C++17 compiler (`g++` or `clang++`)
+- CMake 3.16 or newer
+- `redis-cli` to talk to the server (`sudo apt install redis-tools`)
+
+### Build
+
+From the root of the repository:
 
 ```bash
-cd src
-g++ -std=c++17 -Wall -Wextra -Wshadow -g -pthread \
-            main.cc \
-            response_seralizer/resp.cc \
-            executor/executor.cc \
-            net_connection/credis_init.cc \
-            net_connection/credis_run.cc \
-            persistence/aof.cc \
-            -o \
-            mini-redis
-
-./credis
+cmake -B build
+cmake --build build -j
 ```
 
-In another terminal, connect with the official Redis client:
+This produces two executables in `build/`:
+
+| Executable | Description |
+|---|---|
+| `credis` | The server |
+| `credis_tests` | The unit tests |
+
+The default build is optimized (`Release`). After changing code, run `cmake --build build -j` again: only the modified files are recompiled.
+
+### Run the server
+
+```bash
+./build/credis
+```
+
+The server listens on port **6380**. In another terminal, connect with the official Redis client:
 
 ```bash
 redis-cli -p 6380
 ```
 
 ```text
-127.0.0.1:6380> PING
-PONG
-127.0.0.1:6380> SET city Madrid
+127.0.0.1:6380> SET name bs
 OK
-127.0.0.1:6380> GET city
-"Madrid"
-127.0.0.1:6380> DEL city
+127.0.0.1:6380> GET name
+"bs"
+127.0.0.1:6380> EXPIRE name 60
 (integer) 1
-127.0.0.1:6380> GET city
+127.0.0.1:6380> TTL name
+(integer) 60
+127.0.0.1:6380> DEL name
+(integer) 1
+127.0.0.1:6380> GET name
 (nil)
+```
+
+Data is saved to `appendonly.aof` in the directory where the server is started, and reloaded automatically on the next start.
+
+### Run the tests
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+### Sanitizer builds
+
+To check for memory errors or data races, build in a separate directory with a sanitizer enabled:
+
+```bash
+# Memory errors (AddressSanitizer)
+cmake -B build-asan -DSANITIZE=address && cmake --build build-asan -j
+
+# Data races between threads (ThreadSanitizer)
+cmake -B build-tsan -DSANITIZE=thread && cmake --build build-tsan -j
 ```
 
 ---
@@ -146,8 +182,8 @@ OK
 - [X] **Phase 5 — Expiration commands:** `EXPIRE`, `TTL`
 - [X] **Phase 6 — Persistence:** append-only file (AOF), replayed on startup
 - [X] **Phase 7 — Benchmarks:** with `redis-benchmark` and testing
-- [ ] **Phase 8 — Network and process improve:** `epoll` event loop and testing bottle necks furthermore
-- [ ] **Phase 9 — Makefile and deployment:** Configuration of a makefile to compile the project
+- [ ] **Phase 8 — Makefile and deployment:** Configuration of a makefile to compile the project
+- [ ] **Phase 9 — Network and process improve:** `epoll` event loop and testing bottle necks furthermore
 
 ---
 
