@@ -10,10 +10,13 @@
 #include <iostream>
 #include <thread>
 #include <getopt.h>
-#include <netinet/in.h>
 #include <unistd.h>
 #include <mutex>
+
+#include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/epoll.h>
+
 #include <fstream>
 #include <cctype>
 #include <thread>

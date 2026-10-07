@@ -10,9 +10,15 @@ Performance measurements of Credis across its versions, taken with the official 
 
 | Version | Date | SET (req/s) | GET (req/s) | Avg latency | p99 latency |
 |---|---|---|---|---|---|
+<<<<<<< HEAD
 | [v0.5 — Thread per client](#v1--thread-per-client) | 2026-09-29 | ~75,500 | ~73,000 | ~1.3 ms | ~2.0 ms |
 | [v0.8 — Thread per client + AOF](#v2--thread-per-client--aof-persistence) | 2026-09-30 | ~67,000 | ~67,700 | ~1.5 ms | ~2.5–2.8 ms |
 | v2.0 — `epoll` event loop | *planned* | — | — | — | — |
+=======
+| [v0.5 — Thread per client](#V0.5--thread-per-client) | 29-09-2026 | ~75,500 | ~73,000 | ~1.3 ms | ~2.0 ms |
+| [v0.8 — Thread per client + AOF](#V0.8--thread-per-client--aof-persistence) | 30-09-2026 | ~67,000 | ~67,700 | ~1.5 ms | ~2.5–2.8 ms |
+| [v1.0 — `epoll`](#V1.0--epoll) | | 07-10-2026 | ~208,030 | ~193,423 | ~0.527 ms | ~0.911 ms |
+>>>>>>> 069d316 (Feature: epoll event loop, and readme changes)
 
 All runs: **200 parallel clients**, **1,000,000 requests** per command, 3-byte payload.
 
@@ -34,14 +40,8 @@ All runs: **200 parallel clients**, **1,000,000 requests** per command, 3-byte p
 Benchmarks use an optimized release build, without sanitizers or debug output:
 
 ```bash
-g++ -std=c++17 -O2 -pthread \
-    main.cc \
-    response_serializer/resp.cc \
-    executor/executor.cc \
-    net_connection/credis_init.cc \
-    net_connection/credis_run.cc \
-    persistence/aof.cc \
-    -o credis-release
+cmake -B build
+cmake --build build -j
 ```
 
 ### Procedure
@@ -52,7 +52,7 @@ g++ -std=c++17 -O2 -pthread \
    ```
 2. Start the server:
    ```bash
-   ./credis-release
+   ./build/credis
    ```
 3. In another terminal, run the benchmark:
    ```bash
@@ -64,9 +64,9 @@ g++ -std=c++17 -O2 -pthread \
 
 ---
 
-## V 0.8 — Thread per client
+## V0.5 — Thread per client
 
-**Date:** 2026-09-29 · **Commit:** <!-- fill in: git rev-parse --short HEAD -->
+**Date:** 29-09-2026
 
 **Architecture:** one `std::thread` per connection, shared `Storage` protected by a `std::mutex`, no persistence.
 
@@ -112,11 +112,15 @@ Summary:
 
 ---
 
+<<<<<<< HEAD
 ## v0.8 — Thread per client + AOF persistence
+=======
+## V0.8 — Thread per client + AOF persistence
+>>>>>>> 069d316 (Feature: epoll event loop, and readme changes)
 
-**Date:** 2026-09-30 · **Commit:** <!-- fill in: git rev-parse --short HEAD -->
+**Date:** 30-09-2026
 
-**Architecture:** same as v1, plus an append-only file. Every successful write command (`SET`, `DEL`, `EXPIRE`, `PEXPIRE`, `PEXPIREAT`) is appended to `appendonly.aof` in RESP format and flushed, under its own mutex. Relative expirations are stored as absolute `PEXPIREAT` timestamps.
+**Architecture:** same as v0.5, plus an append-only file. Every successful write command (`SET`, `DEL`, `EXPIRE`, `PEXPIRE`, `PEXPIREAT`) is appended to `appendonly.aof` in RESP format and flushed, under its own mutex. Relative expirations are stored as absolute `PEXPIREAT` timestamps.
 
 **Build:** release (`-O2`), following the procedure above.
 
@@ -206,6 +210,54 @@ Summary:
 
 ---
 
+## V1.0 — epoll
+
+**Date:** 07-10-2026
+
+**Architecture:** same as v0.8, but clients are handled with epoll instead of threads.
+
+| Command | Throughput | Avg | p50 | p95 | p99 | Max |
+|---|---|---|---|---|---|---|
+| SET | 208,030 req/s | 0.496 ms | 0.479 ms | 0.679 ms | 0.927 ms | 2.191 ms |
+| GET | 193,423 req/s | 0.527 ms | 0.511 ms | 0.687 ms | 0.911 ms | 1.815 ms |
+
+> ⚠️ This run was taken before the benchmark procedure above was fixed, and the build flags were not recorded (it was probably a debug build without `-O2`). Treat it as a rough reference. It should be re-measured with the release build for an exact comparison with v2.
+
+<details>
+<summary>Raw output</summary>
+
+```
+====== SET ======
+  1000000 requests completed in 13.25 seconds
+  200 parallel clients
+  3 bytes payload
+  keep alive: 1
+  multi-thread: no
+
+Summary:
+throughput summary: 208029.95 requests per second
+  latency summary (msec):
+          avg       min       p50       p95       p99       max
+        0.496     0.072     0.479     0.679     0.927     2.191
+
+====== GET ======
+  1000000 requests completed in 13.69 seconds
+  200 parallel clients
+  3 bytes payload
+  keep alive: 1
+  multi-thread: no
+
+Summary:
+  throughput summary: 193423.59 requests per second
+  latency summary (msec):
+          avg       min       p50       p95       p99       max
+        0.527     0.088     0.511     0.687     0.911     1.815
+```
+
+</details>
+
+---
+
 ## 🔍 Findings
 
 ### SET and GET perform the same with AOF enabled
@@ -229,8 +281,15 @@ Even with both limits raised, 2,000 clients mean 2,000 threads, each with its ow
 - **Sanitizer builds are for correctness, not speed.** `-fsanitize=thread` is used to detect data races and makes the program several times slower. Never benchmark with it.
 - **Parameters must match.** A run with 20 clients and 100,000 requests is not comparable with one using 200 clients and 1,000,000 requests.
 
+<<<<<<< HEAD
 ---
 
 ## 🗺️ Next
 
 - [ ] v2.0: `epoll` event loop, same benchmark, plus a 2,000-client run
+=======
+### Epoll helps handling a large number of clients
+- **Speed.** running the server with epoll configuration, with non-blocking actions, makes the task of every client faster.
+- **Number of clients.** running the server with epoll configuration, with non-blocking actions, makes the task of every client faster.
+- **Number of events.** This release has an array of one thousand events that can be handled in one moment, however, based on some runned test, changing this number to ten thousands did not impact the overall output.
+>>>>>>> 069d316 (Feature: epoll event loop, and readme changes)
