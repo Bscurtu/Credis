@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Credis — mapa de arquitectura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  /* light */
+  --bg:#EEF2F5; --canvas:#F6F8FA; --surface:#FFFFFF; --line:#C9D4DD; --zone:#E3EAF0;
+  --text:#1B2733; --muted:#5A6B7B; --edge:#9DAFBE; --primary:#1B2733; --hl:#B7791F; --halo:#F6F8FA;
+  --k-client:#2F6FD6; --k-network:#13896F; --k-protocol:#A8740C; --k-core:#6B4FD8; --k-persistence:#C2416A; --k-build:#5E6E80;
+  --warn:#B7791F; --shadow:0 1px 0 rgba(27,39,51,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1821; --canvas:#111D28; --surface:#172634; --line:#2A3D50; --zone:#142230;
+    --text:#DCE6EE; --muted:#8CA0B2; --edge:#476073; --primary:#E6EEF4; --hl:#FFD479; --halo:#111D28;
+    --k-client:#8AB4F8; --k-network:#3FC1A5; --k-protocol:#E9B949; --k-core:#B39DFF; --k-persistence:#F08AA0; --k-build:#94A3B8;
+    --warn:#FFC857; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1821; --canvas:#111D28; --surface:#172634; --line:#2A3D50; --zone:#142230;
+  --text:#DCE6EE; --muted:#8CA0B2; --edge:#476073; --primary:#E6EEF4; --hl:#FFD479; --halo:#111D28;
+  --k-client:#8AB4F8; --k-network:#3FC1A5; --k-protocol:#E9B949; --k-core:#B39DFF; --k-persistence:#F08AA0; --k-build:#94A3B8;
+  --warn:#FFC857; --shadow:none;
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+a{color:inherit}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr;}
+header{display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--bg);flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.brand h1{font-size:18px;font-weight:600;margin:0;letter-spacing:-.01em}
+.brand p{margin:0;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand code{font-family:var(--mono);font-size:12px}
+.tools{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.tool{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 10px;font-size:13px;cursor:pointer;box-shadow:var(--shadow)}
+.tool kbd{font-family:var(--mono);font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px;line-height:16px}
+.tool[aria-pressed="true"]{border-color:var(--hl);color:var(--text);outline:1px solid var(--hl)}
+.tool:focus-visible,.chip:focus-visible,.link-btn:focus-visible,button:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+main{display:grid;grid-template-columns:1fr 380px;min-height:0}
+.stage{position:relative;min-width:0;min-height:0;background:var(--canvas);overflow:hidden}
+svg#map{width:100%;height:100%;display:block;touch-action:none;cursor:grab;user-select:none}
+svg#map.panning{cursor:grabbing}
+aside{border-left:1px solid var(--line);background:var(--bg);overflow-y:auto;min-height:0;padding:18px 20px 28px}
+/* svg */
+.zone rect{fill:var(--zone);stroke:var(--line);stroke-width:1}
+.zone text{fill:var(--muted);font:500 12px var(--sans)}
+.edge path.halo{fill:none;stroke:var(--halo);stroke-width:7;stroke-linejoin:round}
+.edge path.line{fill:none;stroke:var(--edge);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+.edge.k-primary path.line{stroke:var(--primary);stroke-width:2.2}
+.edge.k-startup path.line{stroke-dasharray:6 5}
+.edge.k-control path.line{stroke-dasharray:2 0}
+.edge.k-build path.line{stroke-dasharray:1.5 4.5}
+.edge .hit{fill:none;stroke:transparent;stroke-width:14;cursor:pointer}
+.edge .pill rect{fill:var(--canvas);stroke:var(--line);stroke-width:1}
+.edge .pill text{fill:var(--muted);font:500 10.5px var(--mono);dominant-baseline:central;text-anchor:middle}
+.edge.k-primary .pill text{fill:var(--text)}
+.arrow{fill:var(--edge)} .arrow.primary{fill:var(--primary)} .arrow.hl{fill:var(--hl)}
+.node{cursor:pointer}
+.node rect.box{fill:var(--surface);stroke-width:1.4}
+.node .bar{stroke:none}
+.node text.title{fill:var(--text);font:600 13.5px var(--sans)}
+.node text.sub{fill:var(--muted);font:400 11px var(--mono)}
+.node .src{font:500 9.5px var(--mono);fill:var(--muted)}
+.node .warn circle{fill:var(--warn)} .node .warn text{fill:#1B1405;font:700 10px var(--sans);text-anchor:middle;dominant-baseline:central}
+.node:focus{outline:none}
+.node:focus-visible rect.box{stroke-width:3}
+#map .dim{opacity:.13;transition:opacity .2s}
+#map .lit{opacity:1;transition:opacity .2s}
+.edge.hl path.line{stroke:var(--hl);stroke-width:2.6}
+.edge.hl .pill rect{stroke:var(--hl)}
+.edge.hl .pill text{fill:var(--text)}
+.node.sel rect.box{stroke:var(--hl)!important;stroke-width:2.6}
+.node.hl rect.box{stroke-width:2.4}
+.packet rect{fill:var(--hl)} .packet text{fill:#1B1405;font:500 10.5px var(--mono);dominant-baseline:central;text-anchor:middle}
+/* overlays */
+.banner{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:var(--surface);border:1px solid var(--hl);border-radius:8px;padding:6px 12px;font-size:13px;display:none;z-index:3;max-width:calc(100% - 24px)}
+.banner.on{display:block}
+.legend{position:absolute;left:12px;bottom:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--muted);display:grid;grid-template-columns:auto auto;gap:4px 18px;box-shadow:var(--shadow)}
+.legend .row{display:flex;align-items:center;gap:7px}
+.legend .sw{width:10px;height:10px;border-radius:3px}
+.legend svg{width:26px;height:8px}
+.zoom{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:4px}
+.zoom button{width:32px;height:32px;border:1px solid var(--line);background:var(--surface);border-radius:8px;cursor:pointer;font-size:16px}
+.pop{position:absolute;right:12px;top:12px;width:min(340px,calc(100% - 24px));background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:none;z-index:4;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.pop.on{display:block}
+.pop input{width:100%;font:inherit;font-size:14px;padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:var(--canvas);color:var(--text)}
+.pop ul{list-style:none;margin:8px 0 0;padding:0;max-height:300px;overflow:auto}
+.pop li button{width:100%;text-align:left;background:none;border:0;padding:6px 8px;border-radius:6px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.pop li button:hover,.pop li button.act{background:var(--zone)}
+.pop h3{margin:0 0 8px;font-size:13px;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--canvas);border-radius:999px;padding:3px 10px 3px 8px;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{border-color:currentColor;background:var(--zone)}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+/* inspector */
+.ins h2{font-size:20px;line-height:1.25;margin:4px 0 2px;font-weight:600;letter-spacing:-.01em}
+.ins .kind{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+.ins .file{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin:2px 0 12px;word-break:break-all}
+.ins p{margin:0 0 12px;max-width:62ch}
+.ins h4{font-size:13px;margin:18px 0 6px;font-weight:600;color:var(--muted)}
+.ins ul{margin:0;padding-left:18px}
+.ins li{margin:0 0 6px}
+.ins code{font-family:var(--mono);font-size:12.5px;background:var(--zone);padding:0 4px;border-radius:4px}
+.srcl{display:inline-flex;gap:6px;align-items:center;font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:6px;padding:2px 8px;text-decoration:none;margin:0 6px 6px 0;background:var(--surface)}
+.srcl b{font-weight:500;color:var(--hl)}
+.finding{border-left:3px solid var(--warn);background:var(--zone);padding:8px 10px;border-radius:0 8px 8px 0;margin:0 0 8px;font-size:14px}
+.row-btns{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
+.link-btn{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:4px 10px;font-size:13px;cursor:pointer}
+.conn{list-style:none;padding:0!important}
+.conn li{margin:0 0 4px}
+.conn button{background:none;border:0;padding:2px 0;cursor:pointer;text-align:left;font-size:14px}
+.conn button:hover{text-decoration:underline}
+.conn .lbl{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.steps{list-style:none;padding:0!important;counter-reset:s}
+.steps li{display:grid;grid-template-columns:26px 1fr;gap:8px;padding:8px;border-radius:8px;cursor:pointer;margin:0 0 4px}
+.steps li::before{counter-increment:s;content:counter(s);font:500 12px var(--mono);color:var(--muted);border:1px solid var(--line);border-radius:6px;height:22px;display:grid;place-items:center}
+.steps li.cur{background:var(--zone)}
+.steps li.cur::before{border-color:var(--hl);color:var(--text)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 4px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface)}
+.stat b{display:block;font-size:18px;font-weight:600}
+.stat span{font-size:12px;color:var(--muted)}
+.help{position:fixed;inset:0;background:rgba(10,16,22,.55);display:none;place-items:center;z-index:10;padding:16px}
+.help.on{display:grid}
+.help .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;max-width:440px;width:100%}
+.help table{width:100%;border-collapse:collapse;font-size:14px}
+.help td{padding:5px 0;border-bottom:1px solid var(--line)}
+.help td:first-child{font-family:var(--mono);font-size:12.5px;color:var(--muted);width:110px}
+@media (max-width:820px){
+  main{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,42%)}
+  aside{border-left:0;border-top:1px solid var(--line)}
+  .legend{display:none}
+  .tool kbd{display:none}
+  .brand p{display:none}
+}
+@media (prefers-reduced-motion:reduce){#map .dim,#map .lit{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>Credis</h1>
+      <p>Mapa de arquitectura de <a href="https://github.com/Bscurtu/Credis/tree/e3dd504ca9073169c37827c6f8df95e08308c565">Bscurtu/Credis</a> en <code>e3dd504</code></p>
+    </div>
+    <div class="tools" role="toolbar" aria-label="Herramientas">
+      <button class="tool" id="bSearch" aria-pressed="false">Buscar <kbd>/</kbd></button>
+      <button class="tool" id="bRoute" aria-pressed="false">Ruta <kbd>R</kbd></button>
+      <button class="tool" id="bLens" aria-pressed="false">Lente <kbd>L</kbd></button>
+      <button class="tool" id="bStory" aria-pressed="false">Recorridos <kbd>P</kbd></button>
+      <button class="tool" id="bTheme">Tema <kbd>T</kbd></button>
+      <button class="tool" id="bHelp">Atajos <kbd>?</kbd></button>
+    </div>
+  </header>
+  <main>
+    <div class="stage" id="stage">
+      <svg id="map" role="img" aria-label="Diagrama de arquitectura de Credis" preserveAspectRatio="xMidYMid meet">
+        <defs id="defs"></defs>
+        <g id="gZones"></g><g id="gEdges"></g><g id="gNodes"></g><g id="gPackets"></g>
+      </svg>
+      <div class="banner" id="banner"></div>
+      <div class="pop" id="popSearch"><input id="q" type="search" placeholder="Buscar componente o fichero" aria-label="Buscar componente"><ul id="qres"></ul></div>
+      <div class="pop" id="popLens"><h3>Resaltar por tipo</h3><div class="chips" id="lensChips"></div></div>
+      <div class="legend" id="legend"></div>
+      <div class="zoom"><button id="zIn" aria-label="Acercar">+</button><button id="zOut" aria-label="Alejar">−</button><button id="zFit" aria-label="Encajar">⤢</button></div>
+    </div>
+    <aside id="ins" class="ins" aria-live="polite"></aside>
+  </main>
+</div>
+<div class="help" id="help" role="dialog" aria-modal="true" aria-label="Atajos de teclado"><div class="card">
+  <h3 style="margin:0 0 10px">Atajos</h3>
+  <table>
+    <tr><td>clic</td><td>Inspeccionar nodo o conexión</td></tr>
+    <tr><td>/</td><td>Buscar y enfocar un componente</td></tr>
+    <tr><td>R</td><td>Trazar la ruta dirigida entre dos nodos</td></tr>
+    <tr><td>L</td><td>Lente: resaltar por tipo</td></tr>
+    <tr><td>P</td><td>Recorridos paso a paso</td></tr>
+    <tr><td>← →</td><td>Paso anterior / siguiente del recorrido</td></tr>
+    <tr><td>T</td><td>Cambiar tema</td></tr>
+    <tr><td>+ − 0</td><td>Zoom y encajar</td></tr>
+    <tr><td>Esc</td><td>Limpiar selección</td></tr>
+  </table>
+  <p style="color:var(--muted);font-size:13px;margin:12px 0 0">El estado se guarda en la URL: puedes compartir un enlace con un foco, una ruta o un paso concreto.</p>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+const SHA="e3dd504ca9073169c37827c6f8df95e08308c565";
+const GH="https://github.com/Bscurtu/Credis/blob/"+SHA+"/";
+const KINDS={
+  client:{n:"Cliente externo"}, network:{n:"Red"}, protocol:{n:"Protocolo RESP"},
+  core:{n:"Núcleo"}, persistence:{n:"Persistencia"}, build:{n:"Build y tests"}
+};
+const ZONES=[
+  {id:"z1",t:"Exterior",x:20,y:70,w:190,h:500},
+  {id:"z2",t:"Red  ·  net_connection/",x:230,y:70,w:440,h:500},
+  {id:"z3",t:"Protocolo RESP",x:700,y:70,w:260,h:250},
+  {id:"z4",t:"Núcleo",x:1000,y:70,w:250,h:250},
+  {id:"z5",t:"Persistencia",x:700,y:360,w:550,h:210},
+  {id:"z6",t:"Build y tests (CMake)",x:20,y:610,w:1230,h:160}
+];
+// sources: [path, from, to]
+const N=[
+ {id:"cli",k:"client",t:"Cliente Redis",s:"redis-cli, benchmark",x:115,y:260,w:140,
+  d:"Cualquier cliente que hable RESP. Se conecta al puerto 6380 y mantiene la conexión abierta, enviando muchos comandos seguidos (incluido pipelining).",
+  li:["El <code>redis-cli</code> oficial funciona sin cambios.","<code>redis-benchmark</code> pide <code>CONFIG</code> al empezar; Credis responde con error de comando desconocido y el benchmark sigue sin problema."],
+  f:[]},
+ {id:"init",k:"network",t:"net_init()",s:"credis_init.cc",x:330,y:140,w:120,
+  src:[["src/net_connection/credis_init.cc",4,31]],
+  d:"Crea el socket TCP IPv4, activa SO_REUSEADDR y hace bind a INADDR_ANY:6380. Devuelve el descriptor; el listen(SOMAXCONN) se hace después en credis_run().",
+  li:["Cierra el socket si falla el bind y devuelve -1."],
+  f:["Puerto fijo en código (6380). lib.hh ya incluye <code>getopt.h</code>, así que un <code>--port</code> sería un paso pequeño."]},
+ {id:"loop",k:"network",t:"Event loop epoll",s:"credis_run.cc",x:330,y:260,w:170,
+  src:[["src/net_connection/credis_run.cc",98,210],["src/net_connection/credis_run.cc",196,203]],
+  d:"Un único hilo atiende a todos los clientes. epoll_wait recoge hasta 1000 eventos con timeout de 1 s. Si el evento es del socket servidor hace accept, pone O_NONBLOCK y registra EPOLLIN; si es de un cliente llama a handle_read y después a flush_client, y cierra la conexión ante error o EOF.",
+  li:["Al arrancar: abre el AOF, lo reproduce sobre Storage y solo entonces escucha.","Cada 30 s llama a <code>purge_expired()</code> (expiración activa), dentro de este mismo hilo.","Modo level-triggered: si llegan varias conexiones a la vez, las que no se aceptan en esta vuelta vuelven a notificarse en la siguiente."],
+  f:["El README habla de un «cleaner thread», pero la limpieza vive ahora en el propio bucle. Conviene actualizar el texto."]},
+ {id:"read",k:"network",t:"handle_read()",s:"credis_run.cc",x:570,y:165,w:170,
+  src:[["src/net_connection/credis_run.cc",34,64]],
+  d:"Lee en bloques de 4 KiB hasta EAGAIN y acumula en c.in. Después extrae todos los comandos completos del buffer (pipelining), ejecuta cada uno y añade la respuesta a c.out. Si la respuesta no es un error ni :0, pasa el comando al AOF, que a su vez filtra solo las escrituras.",
+  li:["Reintenta ante EINTR; n == 0 marca EOF."],
+  f:["Si un cliente envía algo que no empieza por <code>*</code> (comandos inline, p. ej. escribir <code>PING</code> en telnet), el parser devuelve nullopt para siempre: la conexión queda bloqueada y <code>c.in</code> crece sin límite. Responder <code>-ERR</code> y cerrar evitaría ambos problemas."]},
+ {id:"clients",k:"network",t:"Buffers por cliente",s:"map<fd, Client>",x:570,y:320,w:170,
+  src:[["src/net_connection/credis_run.cc",11,17]],
+  d:"unordered_map<int, Client> con in, out, want_write y eof. Es el estado que permite tramas TCP partidas, varias órdenes en un mismo read() y respuestas que no caben en un solo send().",
+  li:["Se crea en accept() y se borra en close_client(), que también lo saca de epoll."],f:[]},
+ {id:"flush",k:"network",t:"flush_client()",s:"credis_run.cc",x:570,y:470,w:170,
+  src:[["src/net_connection/credis_run.cc",66,95]],
+  d:"Envía c.out con MSG_NOSIGNAL hasta vaciarlo o recibir EAGAIN. Si queda algo pendiente activa EPOLLOUT; si se vació lo desactiva. Solo llama a epoll_ctl cuando el estado cambia.",
+  li:["MSG_NOSIGNAL evita que un cliente que cierra a mitad mate el proceso con SIGPIPE."],f:[]},
+ {id:"parser",k:"protocol",t:"parse_command()",s:"resp.cc",x:830,y:150,w:176,
+  src:[["src/response_seralizer/resp.cc",46,93]],
+  d:"Parser de arrays de bulk strings (*N, $len). Si el mensaje está incompleto devuelve nullopt sin tocar el buffer; si está completo devuelve los argumentos y borra ese prefijo. Al usar longitudes, los valores pueden contener espacios o cualquier byte.",
+  li:["Lo usan tanto la red como el replay del AOF.","Cubierto por tests: SET, PING y ECHO con espacios."],
+  f:["<code>read_number</code> no valida signo ni desbordamiento: <code>$-1</code> o una longitud enorme desalinea el índice o desborda el int. Tampoco hay tope de tamaño para arrays o bulk strings."]},
+ {id:"ser",k:"protocol",t:"Serializador RESP",s:"resp.cc",x:830,y:270,w:176,
+  src:[["src/response_seralizer/resp.cc",4,44]],
+  d:"Funciones del namespace resp: simple (+), error (-), integer (:), bulk ($), null_bulk ($-1) y array (*). array() también se usa para escribir cada comando en el AOF.",
+  li:["Cubierto por tests: simple, bulk, integer y null."],
+  f:["<code>resp::parse</code> y <code>handle_client</code> están declarados en lib.hh pero no se definen en ningún sitio: restos de versiones anteriores que se pueden borrar."]},
+ {id:"exec",k:"core",t:"execute()",s:"executor.cc",x:1125,y:150,w:190,
+  src:[["src/executor/executor.cc",4,96]],
+  d:"Pasa el nombre a mayúsculas, valida el número de argumentos con los mismos mensajes que Redis y despacha a Storage. Comandos: PING, ECHO, SET, GET, DEL, TTL, EXPIRE, PEXPIRE, PEXPIREAT.",
+  li:["Una cadena de if funciona bien para 9 comandos; una tabla <code>unordered_map&lt;string, handler&gt;</code> escalaría mejor si añades más.","Diferencias con Redis: DEL acepta una sola clave y SET no admite EX/PX/NX."],
+  f:[]},
+ {id:"store",k:"core",t:"Storage",s:"data.hh",x:1125,y:270,w:190,
+  src:[["src/includes/data.hh",3,108]],
+  d:"unordered_map<string, Entry> donde cada Entry guarda el valor y un expires_at opcional sobre steady_clock. Expiración perezosa en get() y ttl(), y activa con purge_expired(). Un SET nuevo borra el TTL anterior, como en Redis.",
+  li:["expire_at() convierte un timestamp Unix en ms (system_clock) a steady_clock.","ttl() devuelve -2 si no existe y -1 si no caduca."],
+  f:["El mutex viene de la versión de un hilo por cliente. Con epoll en un solo hilo ya no hay contención; el coste es pequeño, pero conviene saber que hoy no protege nada.","purge_expired() recorre todo el mapa: O(n) cada 30 s. Redis muestrea claves al azar para no bloquear con datasets grandes."]},
+ {id:"aof",k:"persistence",t:"Aof",s:"aof.cc, aof.hh",x:830,y:470,w:176,h:70,
+  src:[["src/persistence/aof.cc",68,78],["src/persistence/aof.cc",26,46],["src/persistence/aof.cc",48,66],["src/includes/aof.hh",9,25]],
+  d:"append() se queda solo con escrituras (SET, DEL, EXPIRE, PEXPIRE, PEXPIREAT), convierte los TTL relativos en PEXPIREAT absoluto, serializa con resp::array y escribe con flush bajo su propio mutex. load() lee el fichero entero, reproduce cada comando con parse_command + execute y, si al final queda una orden a medias, trunca el fichero.",
+  li:["Guardar PEXPIREAT absoluto evita que un reinicio «rejuvenezca» las claves.","El truncado recupera el fichero tras una escritura cortada por una caída."],
+  f:["flush() entrega los datos al kernel pero no hace fsync: si se cae el sistema operativo pueden perderse las últimas escrituras (equivale a <code>appendfsync no</code>).","La escritura es síncrona dentro del bucle de eventos: un disco lento frena a todos los clientes.","Sin rewrite, el fichero crece indefinidamente (ya está en tu lista de mejoras)."]},
+ {id:"file",k:"persistence",t:"appendonly.aof",s:"fichero RESP",x:1125,y:470,w:190,
+  d:"Fichero en el directorio desde el que arranca el servidor. Cada línea es un array RESP con un comando de escritura.",
+  li:["El procedimiento de benchmark lo borra antes y después de cada ejecución."],f:[]},
+ {id:"main",k:"build",t:"main()",s:"main.cc",x:200,y:690,w:160,
+  src:[["src/main.cc",3,8]],
+  d:"Punto de entrada del ejecutable credis: imprime un mensaje y llama a credis_run().",li:[],f:[]},
+ {id:"corelib",k:"build",t:"credis_core",s:"CMakeLists.txt",x:560,y:690,w:190,
+  src:[["CMakeLists.txt",20,34]],
+  d:"Librería estática con todo salvo los dos main(): resp, executor, init, run y aof. C++17, -Wall -Wextra -Wshadow, enlaza Threads y acepta SANITIZE=address|thread.",
+  li:["Build Release por defecto.","Servidor y tests enlazan contra la misma librería, así que prueban el mismo código."],f:[]},
+ {id:"tests",k:"build",t:"credis_tests",s:"tester.cc",x:920,y:690,w:170,
+  src:[["src/tests/tester.cc",6,77],["CMakeLists.txt",41,49]],
+  d:"Tests con assert sobre Storage (set, get, sobrescritura, del, expiración, SET limpia el TTL) y RESP (serializadores y parser). Compila con -UNDEBUG para que assert siga activo en Release.",
+  li:["Se ejecutan con ctest."],
+  f:["No hay tests del executor ni del AOF, aunque el README dice «Unit tests (Storage, RESP, Executor)». Un test de replay (escribir, recargar y comparar) cubriría la parte más delicada."]}
+];
+const E=[
+ {id:"e1",a:"cli",b:"loop",k:"primary",l:"TCP 6380",p:[[185,260],[245,260]],lp:[215,260],d:"Bytes RESP por una conexión TCP persistente."},
+ {id:"e2",a:"loop",b:"init",k:"startup",l:"bind :6380",p:[[330,230],[330,170]],lp:[330,200],d:"Al arrancar: net_init() y luego listen(SOMAXCONN)."},
+ {id:"e3",a:"loop",b:"clients",k:"control",l:"accept()",p:[[415,275],[450,275],[450,320],[485,320]],lp:[450,298],d:"Nueva conexión: socket no bloqueante, registro EPOLLIN y Client{} vacío."},
+ {id:"e4",a:"loop",b:"read",k:"primary",l:"EPOLLIN",p:[[415,245],[450,245],[450,165],[485,165]],lp:[450,205],d:"El fd de un cliente tiene datos: el bucle llama a handle_read."},
+ {id:"e5",a:"read",b:"clients",k:"data",l:"c.in",p:[[570,195],[570,290]],lp:[570,242],d:"Los bytes leídos se acumulan en el buffer de entrada del cliente."},
+ {id:"e6",a:"read",b:"parser",k:"primary",l:"bytes",p:[[655,155],[742,155]],lp:[698,155],d:"parse_command(c.in) extrae cada comando completo."},
+ {id:"e7",a:"parser",b:"exec",k:"primary",l:"cmd[]",p:[[918,140],[1030,140]],lp:[974,140],d:"vector<string> con el nombre del comando y sus argumentos."},
+ {id:"e8",a:"exec",b:"store",k:"primary",l:"set / get…",p:[[1125,180],[1125,240]],lp:[1125,210],d:"Operaciones sobre el mapa: set, get, del, expire, expire_at, ttl."},
+ {id:"e9",a:"exec",b:"ser",k:"primary",l:"reply",p:[[1030,165],[968,165],[968,275],[918,275]],lp:[968,225],d:"La respuesta se construye con resp::simple, bulk, integer, error o null_bulk."},
+ {id:"e10",a:"ser",b:"clients",k:"primary",l:"c.out",p:[[742,262],[690,262],[690,318],[655,318]],lp:[716,262],d:"handle_read añade la respuesta al buffer de salida del cliente."},
+ {id:"e11",a:"clients",b:"flush",k:"primary",l:"EPOLLOUT",p:[[570,350],[570,440]],lp:[570,395],d:"Tras cada evento el bucle intenta vaciar c.out; si no cabe, espera EPOLLOUT."},
+ {id:"e12",a:"flush",b:"cli",k:"primary",l:"send()",p:[[485,470],[115,470],[115,290]],lp:[300,470],d:"La respuesta vuelve al cliente por el mismo socket."},
+ {id:"e13",a:"read",b:"aof",k:"data",l:"append(cmd)",p:[[655,183],[680,183],[680,490],[742,490]],lp:[680,400],d:"Si la respuesta no es error ni :0, el comando se registra (append filtra las lecturas)."},
+ {id:"e14",a:"aof",b:"ser",k:"data",l:"resp::array()",p:[[830,435],[830,300]],lp:[830,366],d:"Cada comando se guarda como array RESP, con EXPIRE/PEXPIRE ya convertidos a PEXPIREAT."},
+ {id:"e15",a:"aof",b:"file",k:"data",l:"write+flush",p:[[918,460],[1030,460]],lp:[974,460],d:"Escritura en modo append y flush inmediato, sin fsync."},
+ {id:"e16",a:"file",b:"aof",k:"startup",l:"load()",p:[[1030,490],[918,490]],lp:[974,490],d:"Al arrancar se lee el fichero completo."},
+ {id:"e17",a:"aof",b:"exec",k:"startup",l:"replay",p:[[918,443],[992,443],[992,205],[1060,205],[1060,180]],lp:[992,330],d:"Cada comando del fichero pasa por parse_command y execute para reconstruir Storage."},
+ {id:"e18",a:"loop",b:"aof",k:"startup",l:"aof.load()",p:[[330,290],[330,535],[800,535],[800,505]],lp:[560,535],d:"credis_run() abre appendonly.aof y lo reproduce antes de escuchar."},
+ {id:"e19",a:"loop",b:"store",k:"control",l:"purge_expired() cada 30 s",p:[[402,230],[402,50],[1270,50],[1270,270],[1220,270]],lp:[836,50],d:"Expiración activa: borra todas las claves caducadas, dentro del hilo del bucle."},
+ {id:"e20",a:"main",b:"loop",k:"startup",l:"credis_run()",p:[[200,660],[200,276],[245,276]],lp:[200,592],d:"main() arranca el servidor."},
+ {id:"e21",a:"main",b:"corelib",k:"build",l:"enlaza",p:[[280,690],[465,690]],lp:[372,690],d:"El ejecutable credis enlaza credis_core."},
+ {id:"e22",a:"tests",b:"corelib",k:"build",l:"enlaza",p:[[835,690],[655,690]],lp:[745,690],d:"credis_tests enlaza la misma librería que el servidor."}
+];
+const STORIES={
+ set:{t:"Petición SET name bs",steps:[
+  {e:["e1"],pk:"*3 $3 SET…",x:"redis-cli envía <code>*3\\r\\n$3\\r\\nSET\\r\\n$4\\r\\nname\\r\\n$2\\r\\nbs\\r\\n</code>. epoll despierta con EPOLLIN."},
+  {e:["e4"],pk:"EPOLLIN",x:"credis_run() ve que el fd es de un cliente y llama a handle_read()."},
+  {e:["e5"],pk:"c.in",x:"Lee en bloques de 4 KiB hasta EAGAIN y acumula todo en <code>c.in</code>."},
+  {e:["e6"],pk:"bytes",x:"parse_command() extrae <code>[\"SET\",\"name\",\"bs\"]</code> y borra esos bytes del buffer. Si faltaran bytes, esperaría al siguiente read."},
+  {e:["e7","e8"],pk:"SET",x:"execute() valida 3 argumentos y llama a <code>store.set()</code>, que además elimina cualquier TTL previo."},
+  {e:["e9"],pk:"+OK",x:"La respuesta se serializa como <code>+OK\\r\\n</code>."},
+  {e:["e13","e14","e15"],pk:"*3 SET",x:"Como no es error, aof.append() lo escribe como array RESP y hace flush. Un GET pasaría por aquí pero append lo descartaría."},
+  {e:["e10","e11"],pk:"+OK",x:"La respuesta entra en <code>c.out</code> y flush_client intenta enviarla."},
+  {e:["e12"],pk:"+OK",x:"send() con MSG_NOSIGNAL. Si el socket estuviera lleno, se activaría EPOLLOUT para terminar después."}
+ ]},
+ boot:{t:"Arranque y replay del AOF",steps:[
+  {e:["e20"],pk:"run",x:"main() llama a credis_run()."},
+  {e:["e18"],pk:"load",x:"Se abre appendonly.aof en modo append. Si no se puede abrir, el servidor no arranca."},
+  {e:["e16"],pk:"bytes",x:"load() lee el fichero entero en memoria."},
+  {e:["e17","e8"],pk:"replay",x:"Cada comando se reproduce con parse_command + execute. Los TTL ya están como PEXPIREAT absoluto. Si queda una orden a medias, se trunca el fichero."},
+  {e:["e2"],pk:"bind",x:"net_init(): socket, SO_REUSEADDR y bind a 6380. Luego listen(SOMAXCONN), epoll_create1 y registro del socket servidor."},
+  {e:["e1"],pk:"accept",x:"El bucle ya acepta clientes."},
+  {e:["e19"],pk:"purge",x:"Cada 30 s, entre eventos, purge_expired() elimina las claves caducadas."}
+ ]}
+};
+const byId={};N.forEach((n,i)=>{n.h=n.h||60;byId[n.id]=n;});
+const eById={};E.forEach(e=>eById[e.id]=e);
+// numbered sources
+let srcN=0;N.forEach(n=>{(n.src||[]).forEach(s=>{s.n=++srcN;});});
+
+const svg=document.getElementById("map"),NS="http://www.w3.org/2000/svg";
+function el(t,a,p){const x=document.createElementNS(NS,t);for(const k in a)x.setAttribute(k,a[k]);if(p)p.appendChild(x);return x;}
+function kc(k){return "var(--k-"+k+")";}
+function roundPath(pts,r){
+  if(pts.length<3)return "M"+pts.map(p=>p.join(",")).join("L");
+  let d="M"+pts[0][0]+","+pts[0][1];
+  for(let i=1;i<pts.length-1;i++){
+    const [x0,y0]=pts[i-1],[x1,y1]=pts[i],[x2,y2]=pts[i+1];
+    const l1=Math.hypot(x1-x0,y1-y0),l2=Math.hypot(x2-x1,y2-y1),rr=Math.min(r,l1/2,l2/2);
+    const ax=x1-(x1-x0)/l1*rr,ay=y1-(y1-y0)/l1*rr,bx=x1+(x2-x1)/l2*rr,by=y1+(y2-y1)/l2*rr;
+    d+="L"+ax+","+ay+"Q"+x1+","+y1+" "+bx+","+by;
+  }
+  const L=pts[pts.length-1];return d+"L"+L[0]+","+L[1];
+}
+// markers
+const defs=document.getElementById("defs");
+[["a-edge","arrow"],["a-primary","arrow primary"],["a-hl","arrow hl"]].forEach(([id,c])=>{
+  const m=el("marker",{id,viewBox:"0 0 10 10",refX:"9",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse",markerUnits:"userSpaceOnUse"},defs);
+  m.setAttribute("markerWidth","9");m.setAttribute("markerHeight","9");
+  el("path",{d:"M0,1 L10,5 L0,9 z",class:c},m);
+});
+// zones
+const gZ=document.getElementById("gZones");
+ZONES.forEach(z=>{const g=el("g",{class:"zone"},gZ);el("rect",{x:z.x,y:z.y,width:z.w,height:z.h,rx:14},g);const t=el("text",{x:z.x+14,y:z.y+22},g);t.textContent=z.t;});
+// edges
+const gE=document.getElementById("gEdges"),edgeEls={};
+E.forEach(e=>{
+  const g=el("g",{class:"edge k-"+e.k,"data-id":e.id},gE);
+  const d=roundPath(e.p,9);
+  el("path",{d,class:"halo"},g);
+  const line=el("path",{d,class:"line","marker-end":"url(#"+(e.k==="primary"?"a-primary":"a-edge")+")"},g);
+  const hit=el("path",{d,class:"hit"},g);
+  const pill=el("g",{class:"pill"},g);
+  const r=el("rect",{rx:5},pill);const tx=el("text",{x:e.lp[0],y:e.lp[1]},pill);tx.textContent=e.l;
+  e._r=r;e._t=tx;e._line=line;
+  g.addEventListener("click",ev=>{ev.stopPropagation();if(dragMoved)return;selectEdge(e.id);});
+  edgeEls[e.id]=g;
+});
+function sizePills(){E.forEach(e=>{try{const b=e._t.getBBox();e._r.setAttribute("x",b.x-5);e._r.setAttribute("y",b.y-2);e._r.setAttribute("width",b.width+10);e._r.setAttribute("height",b.height+4);}catch(_){}});}
+// nodes
+const gN=document.getElementById("gNodes"),nodeEls={};
+N.forEach(n=>{
+  const x=n.x-n.w/2,y=n.y-n.h/2;
+  const g=el("g",{class:"node","data-id":n.id,tabindex:"0",role:"button","aria-label":n.t+", "+KINDS[n.k].n},gN);
+  el("rect",{x,y,width:n.w,height:n.h,rx:10,class:"box",stroke:kc(n.k)},g);
+  el("rect",{x:x+1,y:y+12,width:3,height:n.h-24,rx:1.5,class:"bar",fill:kc(n.k)},g);
+  const t=el("text",{x:x+14,y:n.y-3,class:"title"},g);t.textContent=n.t;
+  const s=el("text",{x:x+14,y:n.y+15,class:"sub"},g);s.textContent=n.s;
+  if(n.src&&n.src.length){const st=el("text",{x:x+n.w-8,y:y+14,class:"src","text-anchor":"end"},g);st.textContent="SRC "+n.src[0].n;}
+  if(n.f&&n.f.length){const w=el("g",{class:"warn"},g);el("circle",{cx:x+n.w-2,cy:y+n.h-2,r:8},w);const wt=el("text",{x:x+n.w-2,y:y+n.h-1.5},w);wt.textContent=n.f.length;el("title",{},w).textContent=n.f.length+" observación(es)";}
+  g.addEventListener("click",ev=>{ev.stopPropagation();if(dragMoved)return;onNodeClick(n.id);});
+  g.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();onNodeClick(n.id);}});
+  nodeEls[n.id]=g;
+});
+// legend
+const lg=document.getElementById("legend");
+Object.keys(KINDS).forEach(k=>{const r=document.createElement("div");r.className="row";r.innerHTML='<span class="sw" style="background:'+kc(k)+'"></span>'+KINDS[k].n;lg.appendChild(r);});
+[["Ruta principal","primary","2.2",""],["Datos o control","edge","1.5",""],["Arranque","edge","1.5","6 5"],["Build","edge","1.5","1.5 4"]].forEach(([n,c,w,da])=>{
+  const r=document.createElement("div");r.className="row";
+  r.innerHTML='<svg viewBox="0 0 26 8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--'+c+')" stroke-width="'+w+'" stroke-dasharray="'+da+'"/></svg>'+n;lg.appendChild(r);});
+
+// ---------- view box / zoom / pan ----------
+const BASE={x:0,y:28,w:1300,h:752};let vb=Object.assign({},BASE);
+function applyVB(){svg.setAttribute("viewBox",[vb.x,vb.y,vb.w,vb.h].join(" "));}
+applyVB();
+function scaleUnits(){const r=svg.getBoundingClientRect();return Math.max(vb.w/r.width,vb.h/r.height);}
+function zoom(f,cx,cy){
+  const r=svg.getBoundingClientRect();const s=scaleUnits();
+  const ox=(r.width*s-vb.w)/2,oy=(r.height*s-vb.h)/2;
+  const ux=cx===undefined?vb.x+vb.w/2:vb.x-ox+(cx-r.left)*s,uy=cy===undefined?vb.y+vb.h/2:vb.y-oy+(cy-r.top)*s;
+  const nw=Math.min(Math.max(vb.w*f,260),3200),k=nw/vb.w;
+  vb.x=ux-(ux-vb.x)*k;vb.y=uy-(uy-vb.y)*k;vb.w=nw;vb.h=vb.h*k;applyVB();
+}
+svg.addEventListener("wheel",ev=>{ev.preventDefault();zoom(ev.deltaY>0?1.12:1/1.12,ev.clientX,ev.clientY);},{passive:false});
+let drag=null,dragMoved=false;const pts=new Map();let pinch=null;
+svg.addEventListener("pointerdown",ev=>{pts.set(ev.pointerId,[ev.clientX,ev.clientY]);dragMoved=false;
+  if(pts.size===2){const a=[...pts.values()];pinch={d:Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1])};drag=null;return;}
+  drag={x:ev.clientX,y:ev.clientY,vx:vb.x,vy:vb.y,s:scaleUnits(),id:ev.pointerId};});
+svg.addEventListener("pointermove",ev=>{if(!pts.has(ev.pointerId))return;pts.set(ev.pointerId,[ev.clientX,ev.clientY]);
+  if(pinch&&pts.size===2){const a=[...pts.values()];const d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);zoom(pinch.d/d,(a[0][0]+a[1][0])/2,(a[0][1]+a[1][1])/2);pinch.d=d;dragMoved=true;return;}
+  if(!drag)return;const dx=ev.clientX-drag.x,dy=ev.clientY-drag.y;
+  if(!dragMoved&&Math.hypot(dx,dy)<4)return;
+  if(!dragMoved){dragMoved=true;svg.classList.add("panning");try{svg.setPointerCapture(ev.pointerId);}catch(_){}}
+  vb.x=drag.vx-dx*drag.s;vb.y=drag.vy-dy*drag.s;applyVB();});
+function endPtr(ev){pts.delete(ev.pointerId);if(pts.size<2)pinch=null;drag=null;svg.classList.remove("panning");setTimeout(()=>{dragMoved=false;},0);}
+svg.addEventListener("pointerup",endPtr);svg.addEventListener("pointercancel",endPtr);
+svg.addEventListener("click",()=>{if(dragMoved)return;if(state.mode==="route")return;clearAll();});
+document.getElementById("zIn").onclick=()=>zoom(1/1.25);
+document.getElementById("zOut").onclick=()=>zoom(1.25);
+document.getElementById("zFit").onclick=()=>{vb=Object.assign({},BASE);applyVB();};
+
+// ---------- graph helpers ----------
+function reach(start,dir){const seen=new Set([start]),es=new Set(),q=[start];
+  while(q.length){const c=q.shift();E.forEach(e=>{const from=dir==="down"?e.a:e.b,to=dir==="down"?e.b:e.a;
+    if(from===c){es.add(e.id);if(!seen.has(to)){seen.add(to);q.push(to);}}});}
+  return {nodes:seen,edges:es};}
+function route(a,b){const prev={};prev[a]=null;const q=[a];
+  while(q.length){const c=q.shift();if(c===b)break;E.forEach(e=>{if(e.a===c&&!(e.b in prev)){prev[e.b]=e.id;q.push(e.b);}});}
+  if(!(b in prev))return null;const path=[];let c=b;while(prev[c]){const e=eById[prev[c]];path.unshift(e.id);c=e.a;}return path;}
+
+// ---------- highlight ----------
+function highlight(nodes,edges,sel){
+  const any=nodes||edges;
+  N.forEach(n=>{const g=nodeEls[n.id];g.classList.remove("dim","lit","sel","hl");
+    if(any){if(nodes&&nodes.has(n.id)){g.classList.add("lit","hl");}else g.classList.add("dim");}
+    if(sel&&sel===n.id)g.classList.add("sel");});
+  E.forEach(e=>{const g=edgeEls[e.id];g.classList.remove("dim","lit","hl");
+    e._line.setAttribute("marker-end","url(#"+(e.k==="primary"?"a-primary":"a-edge")+")");
+    if(any){if(edges&&edges.has(e.id)){g.classList.add("lit","hl");e._line.setAttribute("marker-end","url(#a-hl)");}else g.classList.add("dim");}});
+  document.querySelectorAll(".zone").forEach(z=>z.style.opacity=any?.6:1);
+}
+
+// ---------- state ----------
+const state={mode:null,focus:null,reach:null,edge:null,route:null,routeA:null,lens:new Set(),story:null,step:0};
+function setHash(){let h="";
+  if(state.story)h="story="+state.story+":"+(state.step+1);
+  else if(state.route)h="route="+state.route.join("~");
+  else if(state.focus)h="focus="+state.focus+(state.reach?"&reach="+state.reach:"");
+  else if(state.edge)h="relation="+state.edge;
+  else if(state.lens.size)h="lens="+[...state.lens].join("~");
+  try{history.replaceState(null,"",h?"#"+h:location.pathname+location.search);}catch(_){}}
+function setPressed(){
+  document.getElementById("bRoute").setAttribute("aria-pressed",state.mode==="route");
+  document.getElementById("bStory").setAttribute("aria-pressed",!!state.story);
+  document.getElementById("bLens").setAttribute("aria-pressed",state.lens.size>0||popLens.classList.contains("on"));
+  document.getElementById("bSearch").setAttribute("aria-pressed",popSearch.classList.contains("on"));
+}
+const ins=document.getElementById("ins"),banner=document.getElementById("banner");
+function showBanner(t){banner.innerHTML=t;banner.classList.toggle("on",!!t);}
+function clearAll(keepPanel){state.mode=null;state.focus=null;state.reach=null;state.edge=null;state.route=null;state.routeA=null;state.story=null;state.lens.clear();
+  stopPackets();highlight(null,null);showBanner("");renderLensChips();setPressed();setHash();if(!keepPanel)renderOverview();}
+
+// ---------- inspector renderers ----------
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function kindTag(k){return '<span class="kind"><span class="dot" style="background:'+kc(k)+'"></span>'+KINDS[k].n+'</span>';}
+function srcLinks(n){return (n.src||[]).map(s=>'<a class="srcl" target="_blank" rel="noopener" href="'+GH+s[0]+'#L'+s[1]+'-L'+s[2]+'"><b>SRC '+s.n+'</b>'+esc(s[0].replace("src/",""))+':'+s[1]+'–'+s[2]+'</a>').join("");}
+function renderOverview(){
+  const nf=N.reduce((a,n)=>a+(n.f?n.f.length:0),0);
+  ins.innerHTML='<div class="kind">Credis v1.0</div><h2>Un clon de Redis en C++17, de un solo hilo</h2>'+
+  '<p>Cada petición atraviesa cuatro piezas independientes: red, parser RESP, executor y Storage. La persistencia escucha las escrituras y se reproduce al arrancar. Haz clic en cualquier componente para ver qué hace, su código y lo que conecta.</p>'+
+  '<div class="stats"><div class="stat"><b>~780</b><span>líneas C++</span></div><div class="stat"><b>9</b><span>comandos</span></div><div class="stat"><b>~208k</b><span>SET/s con epoll</span></div></div>'+
+  '<h4>Empieza por aquí</h4><div class="row-btns"><button class="link-btn" data-story="set">Recorrido de un SET</button><button class="link-btn" data-story="boot">Arranque y replay</button></div>'+
+  '<div class="row-btns"><button class="link-btn" data-focus="loop" data-reach="down">Todo lo que alcanza el event loop</button></div>'+
+  '<h4>Del repositorio</h4><div class="finding"><code>README.md</code> y <code>docs/benchmark.md</code> tienen marcadores de conflicto de merge (<code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code>) commiteados, así que GitHub muestra ambas versiones de la tabla de benchmarks.</div>'+
+  '<p style="color:var(--muted);font-size:14px">Hay '+nf+' observaciones más en el código, marcadas con un círculo amarillo en cada nodo.</p>'+
+  '<h4>Evolución del rendimiento</h4><ul><li>v0.5, un hilo por cliente: ~75k SET/s, p99 ~2 ms</li><li>v0.8, + AOF: ~67k SET/s, p99 ~2,5 ms</li><li>v1.0, epoll + AOF: ~208k SET/s, p99 ~0,9 ms</li></ul>'+
+  '<p style="color:var(--muted);font-size:13px;margin-top:14px">Rutas y alcance se calculan solo con las conexiones dibujadas, no infieren comportamiento en tiempo de ejecución.</p>';
+  bindPanel();
+}
+function connList(id){
+  const out=E.filter(e=>e.a===id),inn=E.filter(e=>e.b===id);
+  const li=(e,other)=>'<li><button data-node="'+other+'">'+esc(byId[other].t)+'</button> <span class="lbl">'+esc(e.l)+'</span></li>';
+  return (inn.length?'<h4>Recibe de</h4><ul class="conn">'+inn.map(e=>li(e,e.a)).join("")+'</ul>':"")+
+         (out.length?'<h4>Envía a</h4><ul class="conn">'+out.map(e=>li(e,e.b)).join("")+'</ul>':"");
+}
+function renderNode(id){
+  const n=byId[id];
+  ins.innerHTML=kindTag(n.k)+'<h2>'+esc(n.t)+'</h2><div class="file">'+esc(n.s)+'</div>'+
+  (n.src&&n.src.length?'<div>'+srcLinks(n)+'</div>':"")+
+  '<p>'+esc(n.d)+'</p>'+
+  '<div class="row-btns"><button class="link-btn" data-focus="'+id+'" data-reach="up" aria-pressed="'+(state.reach==="up")+'">Qué lo alimenta</button><button class="link-btn" data-focus="'+id+'" data-reach="down" aria-pressed="'+(state.reach==="down")+'">A qué alcanza</button><button class="link-btn" data-routefrom="'+id+'">Ruta desde aquí</button></div>'+
+  (n.li&&n.li.length?'<h4>Detalles</h4><ul>'+n.li.map(x=>'<li>'+x+'</li>').join("")+'</ul>':"")+
+  (n.f&&n.f.length?'<h4>Observaciones</h4>'+n.f.map(x=>'<div class="finding">'+x+'</div>').join(""):"")+
+  connList(id);
+  bindPanel();
+}
+function renderEdge(id){
+  const e=eById[id],a=byId[e.a],b=byId[e.b];
+  const kn={primary:"Ruta principal",data:"Datos",control:"Control",startup:"Arranque",build:"Build"}[e.k];
+  ins.innerHTML='<div class="kind">Conexión, '+kn.toLowerCase()+'</div><h2>'+esc(a.t)+' → '+esc(b.t)+'</h2><div class="file">'+esc(e.l)+'</div><p>'+esc(e.d)+'</p>'+
+  '<div class="row-btns"><button class="link-btn" data-node="'+a.id+'">Ir a '+esc(a.t)+'</button><button class="link-btn" data-node="'+b.id+'">Ir a '+esc(b.t)+'</button></div>';
+  bindPanel();
+}
+function renderRoute(a,b,path){
+  if(!path){ins.innerHTML='<div class="kind">Ruta</div><h2>Sin camino dirigido</h2><p>No hay conexiones que lleven de <b>'+esc(byId[a].t)+'</b> a <b>'+esc(byId[b].t)+'</b> siguiendo el sentido de las flechas.</p><div class="row-btns"><button class="link-btn" id="swapR">Probar al revés</button></div>';
+    bindPanel();document.getElementById("swapR").onclick=()=>doRoute(b,a);return;}
+  let html='<div class="kind">Ruta dirigida más corta</div><h2>'+esc(byId[a].t)+' → '+esc(byId[b].t)+'</h2><p>'+path.length+' salto'+(path.length>1?'s':'')+'.</p><ol class="steps">';
+  path.forEach(eid=>{const e=eById[eid];html+='<li data-edge="'+eid+'"><div><b>'+esc(byId[e.a].t)+' → '+esc(byId[e.b].t)+'</b><br><span style="color:var(--muted);font-size:13.5px">'+esc(e.d)+'</span></div></li>';});
+  ins.innerHTML=html+'</ol><div class="row-btns"><button class="link-btn" id="swapR">Invertir</button></div>';
+  bindPanel();document.getElementById("swapR").onclick=()=>doRoute(b,a);
+}
+function renderStory(){
+  const s=STORIES[state.story];
+  let html='<div class="kind">Recorrido</div><h2>'+esc(s.t)+'</h2><div class="row-btns"><button class="link-btn" id="sPrev">← Anterior</button><button class="link-btn" id="sNext">Siguiente →</button><button class="link-btn" data-story="'+(state.story==="set"?"boot":"set")+'">'+(state.story==="set"?"Ver arranque":"Ver un SET")+'</button></div><ol class="steps">';
+  s.steps.forEach((st,i)=>{html+='<li data-step="'+i+'" class="'+(i===state.step?"cur":"")+'"><div>'+st.x+'</div></li>';});
+  ins.innerHTML=html+'</ol>';
+  bindPanel();
+  document.getElementById("sPrev").onclick=()=>goStep(state.step-1);
+  document.getElementById("sNext").onclick=()=>goStep(state.step+1);
+  const cur=ins.querySelector("li.cur");if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:"nearest"});
+}
+function bindPanel(){
+  ins.querySelectorAll("[data-node]").forEach(b=>b.onclick=()=>focusNode(b.dataset.node));
+  ins.querySelectorAll("[data-focus]").forEach(b=>b.onclick=()=>focusNode(b.dataset.focus,state.focus===b.dataset.focus&&state.reach===b.dataset.reach?null:b.dataset.reach));
+  ins.querySelectorAll("[data-story]").forEach(b=>b.onclick=()=>startStory(b.dataset.story));
+  ins.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>goStep(+b.dataset.step));
+  ins.querySelectorAll("[data-edge]").forEach(b=>b.onclick=()=>selectEdge(b.dataset.edge));
+  ins.querySelectorAll("[data-routefrom]").forEach(b=>b.onclick=()=>{clearAll(true);state.mode="route";state.routeA=b.dataset.routefrom;highlight(new Set([state.routeA]),new Set(),state.routeA);showBanner("Origen: <b>"+esc(byId[state.routeA].t)+"</b>. Elige el destino.");setPressed();});
+}
+
+// ---------- actions ----------
+function onNodeClick(id){
+  if(state.mode==="route"){
+    if(!state.routeA){state.routeA=id;highlight(new Set([id]),new Set(),id);showBanner("Origen: <b>"+esc(byId[id].t)+"</b>. Elige el destino.");return;}
+    doRoute(state.routeA,id);return;}
+  focusNode(id);
+}
+function focusNode(id,dir){
+  stopPackets();state.story=null;state.route=null;state.edge=null;state.mode=null;showBanner("");
+  state.focus=id;state.reach=dir||null;
+  if(dir){const r=reach(id,dir);highlight(r.nodes,r.edges,id);}
+  else{const ns=new Set([id]),es=new Set();E.forEach(e=>{if(e.a===id||e.b===id){es.add(e.id);ns.add(e.a);ns.add(e.b);}});highlight(ns,es,id);}
+  renderNode(id);setPressed();setHash();
+}
+function selectEdge(id){
+  if(state.mode==="route")return;
+  stopPackets();state.story=null;state.focus=null;state.reach=null;state.route=null;state.edge=id;
+  const e=eById[id];highlight(new Set([e.a,e.b]),new Set([id]));renderEdge(id);setPressed();setHash();
+}
+function doRoute(a,b){
+  stopPackets();state.mode=null;state.routeA=null;state.focus=null;state.story=null;state.edge=null;showBanner("");
+  const p=route(a,b);
+  if(p){state.route=[a,b];const ns=new Set([a]);p.forEach(eid=>{ns.add(eById[eid].a);ns.add(eById[eid].b);});highlight(ns,new Set(p));playPackets(p.map(x=>[x,"·"]),true);}
+  else{state.route=null;highlight(new Set([a,b]),new Set());}
+  renderRoute(a,b,p);setPressed();setHash();
+}
+function startStory(k,step){clearAll(true);state.story=k;state.step=step||0;setPressed();goStep(state.step);}
+function goStep(i){
+  const s=STORIES[state.story];if(!s)return;i=Math.max(0,Math.min(s.steps.length-1,i));state.step=i;
+  const st=s.steps[i],ns=new Set(),es=new Set(st.e);st.e.forEach(eid=>{ns.add(eById[eid].a);ns.add(eById[eid].b);});
+  highlight(ns,es);renderStory();setHash();playPackets(st.e.map(eid=>[eid,st.pk]));
+}
+
+// ---------- packets (story motion) ----------
+const gP=document.getElementById("gPackets");let raf=null;
+const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function stopPackets(){if(raf)cancelAnimationFrame(raf);raf=null;while(gP.firstChild)gP.removeChild(gP.firstChild);}
+function playPackets(list,dotOnly){
+  stopPackets();
+  const items=list.map(([eid,label],i)=>{const e=eById[eid];const len=e._line.getTotalLength();
+    const g=el("g",{class:"packet"},gP);
+    if(dotOnly){el("circle",{r:5,fill:"var(--hl)"},g);}
+    else{const r=el("rect",{rx:6},g);const t=el("text",{x:0,y:0},g);t.textContent=label;const b=t.getBBox();r.setAttribute("x",b.x-6);r.setAttribute("y",b.y-3);r.setAttribute("width",b.width+12);r.setAttribute("height",b.height+6);}
+    return {e,len,g,delay:dotOnly?i*420:i*260};});
+  const dur=dotOnly?700:1100,t0=performance.now();
+  function frame(now){let done=true;
+    items.forEach(it=>{let p=(now-t0-it.delay)/dur;if(reduce)p=1;if(p<1)done=false;p=Math.max(0,Math.min(1,p));
+      const ease=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;const pt=it.e._line.getPointAtLength(ease*it.len);
+      it.g.setAttribute("transform","translate("+pt.x+","+pt.y+")");it.g.style.opacity=(now-t0<it.delay&&!reduce)?0:1;});
+    if(!done)raf=requestAnimationFrame(frame);else if(dotOnly){setTimeout(()=>{if(!state.route)return;stopPackets();},400);}}
+  raf=requestAnimationFrame(frame);
+}
+
+// ---------- search ----------
+const popSearch=document.getElementById("popSearch"),q=document.getElementById("q"),qres=document.getElementById("qres");let qi=0,qlist=[];
+function openSearch(){popLens.classList.remove("on");popSearch.classList.add("on");q.value="";renderQ();setPressed();setTimeout(()=>q.focus(),0);}
+function closeSearch(){popSearch.classList.remove("on");setPressed();}
+function renderQ(){const v=q.value.trim().toLowerCase();
+  qlist=N.filter(n=>!v||(n.t+" "+n.s+" "+n.d+" "+(n.src||[]).map(s=>s[0]).join(" ")).toLowerCase().includes(v));qi=0;
+  qres.innerHTML=qlist.map((n,i)=>'<li><button data-i="'+i+'" class="'+(i===qi?"act":"")+'"><span class="dot" style="background:'+kc(n.k)+'"></span>'+esc(n.t)+' <span style="color:var(--muted);font-family:var(--mono);font-size:12px;margin-left:auto">'+esc(n.s)+'</span></button></li>').join("")||'<li style="color:var(--muted);padding:6px 8px">Sin coincidencias. Prueba con un fichero, como aof.cc.</li>';
+  qres.querySelectorAll("button").forEach(b=>b.onclick=()=>{closeSearch();focusNode(qlist[+b.dataset.i].id);});}
+q.addEventListener("input",renderQ);
+q.addEventListener("keydown",ev=>{if(ev.key==="ArrowDown"||ev.key==="ArrowUp"){ev.preventDefault();qi=(qi+(ev.key==="ArrowDown"?1:-1)+qlist.length)%Math.max(qlist.length,1);qres.querySelectorAll("button").forEach((b,i)=>b.classList.toggle("act",i===qi));}
+  if(ev.key==="Enter"&&qlist[qi]){closeSearch();focusNode(qlist[qi].id);}
+  if(ev.key==="Escape"){closeSearch();}});
+
+// ---------- lens ----------
+const popLens=document.getElementById("popLens"),lensChips=document.getElementById("lensChips");
+function renderLensChips(){lensChips.innerHTML=Object.keys(KINDS).map(k=>'<button class="chip" data-k="'+k+'" aria-pressed="'+state.lens.has(k)+'" style="color:'+kc(k)+'"><span class="dot" style="background:'+kc(k)+'"></span><span style="color:var(--text)">'+KINDS[k].n+'</span></button>').join("");
+  lensChips.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{const k=c.dataset.k;state.lens.has(k)?state.lens.delete(k):state.lens.add(k);applyLens();});}
+function applyLens(){stopPackets();state.focus=null;state.reach=null;state.story=null;state.route=null;state.edge=null;
+  if(!state.lens.size){highlight(null,null);renderOverview();}
+  else{const ns=new Set(N.filter(n=>state.lens.has(n.k)).map(n=>n.id));const es=new Set(E.filter(e=>ns.has(e.a)&&ns.has(e.b)).map(e=>e.id));highlight(ns,es);
+    const names=[...state.lens].map(k=>KINDS[k].n).join(" y ");
+    ins.innerHTML='<div class="kind">Lente</div><h2>'+esc(names)+'</h2><p>'+ns.size+' componentes y '+es.size+' conexiones entre ellos.</p><ul class="conn">'+[...ns].map(id=>'<li><button data-node="'+id+'">'+esc(byId[id].t)+'</button> <span class="lbl">'+esc(byId[id].s)+'</span></li>').join("")+'</ul>';bindPanel();}
+  renderLensChips();setPressed();setHash();}
+function toggleLens(){closeSearch();popLens.classList.toggle("on");setPressed();}
+
+// ---------- theme ----------
+const root=document.documentElement;
+function curTheme(){const t=root.getAttribute("data-theme");if(t)return t;return window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}
+try{const t=localStorage.getItem("credis-map-theme");if(t)root.setAttribute("data-theme",t);}catch(_){}
+function toggleTheme(){const n=curTheme()==="dark"?"light":"dark";root.setAttribute("data-theme",n);try{localStorage.setItem("credis-map-theme",n);}catch(_){}}
+
+// ---------- wiring ----------
+document.getElementById("bSearch").onclick=()=>popSearch.classList.contains("on")?closeSearch():openSearch();
+document.getElementById("bLens").onclick=toggleLens;
+document.getElementById("bRoute").onclick=()=>{if(state.mode==="route"){clearAll();return;}clearAll(true);state.mode="route";highlight(null,null);showBanner("Modo ruta: elige el nodo de origen.");setPressed();};
+document.getElementById("bStory").onclick=()=>state.story?clearAll():startStory("set");
+document.getElementById("bTheme").onclick=toggleTheme;
+const help=document.getElementById("help");
+document.getElementById("bHelp").onclick=()=>help.classList.add("on");
+help.addEventListener("click",ev=>{if(ev.target===help)help.classList.remove("on");});
+document.addEventListener("keydown",ev=>{
+  if(ev.target&&(ev.target.tagName==="INPUT"))return;
+  if(ev.metaKey||ev.ctrlKey||ev.altKey)return;
+  const k=ev.key;
+  if(k==="/"){ev.preventDefault();openSearch();}
+  else if(k==="r"||k==="R")document.getElementById("bRoute").click();
+  else if(k==="l"||k==="L")toggleLens();
+  else if(k==="p"||k==="P")document.getElementById("bStory").click();
+  else if(k==="t"||k==="T")toggleTheme();
+  else if(k==="?")help.classList.toggle("on");
+  else if(k==="+"||k==="=")zoom(1/1.25);
+  else if(k==="-")zoom(1.25);
+  else if(k==="0"){vb=Object.assign({},BASE);applyVB();}
+  else if(k==="ArrowRight"&&state.story)goStep(state.step+1);
+  else if(k==="ArrowLeft"&&state.story)goStep(state.step-1);
+  else if(k==="Escape"){help.classList.remove("on");closeSearch();popLens.classList.remove("on");clearAll();}
+});
+
+// ---------- init ----------
+sizePills();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(sizePills);
+renderLensChips();renderOverview();
+(function fromHash(){const h=new URLSearchParams(location.hash.slice(1));
+  if(h.get("story")){const [k,s]=h.get("story").split(":");if(STORIES[k]){startStory(k,Math.max(0,(+s||1)-1));return;}}
+  if(h.get("route")){const [a,b]=h.get("route").split("~");if(byId[a]&&byId[b]){doRoute(a,b);return;}}
+  if(h.get("focus")&&byId[h.get("focus")]){const r=h.get("reach");focusNode(h.get("focus"),r==="upstream"||r==="up"?"up":r==="downstream"||r==="down"?"down":null);return;}
+  if(h.get("relation")&&eById[h.get("relation")]){selectEdge(h.get("relation"));return;}
+  if(h.get("lens")){h.get("lens").split("~").forEach(k=>{if(KINDS[k])state.lens.add(k);});if(state.lens.size)applyLens();}
+})();
+})();
+</script>
+</body>
+</html>
