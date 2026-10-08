@@ -55,11 +55,13 @@ std::string execute(const std::vector<std::string>& cmd, Storage& store)
 
     if (command == "EXPIRE")
     {
-        if (size != 3)
+        if (size != 3 )
             return resp::error("ERR wrong number of arguments for 'expire' command");
         long long secs;
         try {
             secs = std::stoll(cmd[2]);
+            if (secs > INT_MAX)
+                throw std::runtime_error("");
         } catch (...) {
             return resp::error("ERR value is not an integer or out of range");
         }
